@@ -51,5 +51,14 @@ Use Node `26.13.0` from `.nvmrc` (the package engine minimum is `22.23.4`). Verc
 6. [`state-hooks.md`](skills/state-hooks.md)
 7. [`testing-quality.md`](skills/testing-quality.md)
 8. [`runtime-delivery.md`](skills/runtime-delivery.md)
+9. [`design-system-compliance.md`](skills/design-system-compliance.md)
 
 <!-- END:autocheck-frontend-rules -->
+
+## UI Design System Rules (DESIGN.md Compliance)
+
+Follow the root `DESIGN.md` for all visual tokens and Tailwind CSS styling: dominant `#FFFFFF`, secondary `#0052CC`, accent `#CF6625`, dark neutral `#001E4D`, and light neutral `#D8E8FF`. Translate these into reusable semantic tokens.
+
+Use interconnected node steppers for authentication, appointment scheduling and payment progress; solid or gradient progress bars are prohibited. Follow the specified node and connector states in `DESIGN.md`.
+
+Sidebar buttons use an 8px radius and 10px vertical / 16px horizontal padding. Main cards use a 12px radius, main sections use 24px container padding, and grids use a 16px gap. Apply the specified card shadow and navigation states.
