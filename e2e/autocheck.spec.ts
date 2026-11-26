@@ -141,6 +141,39 @@ test("conserva el hash del QR y maneja 200, 404 y 409", async ({ page }) => {
   await expect(verification.getByText("Certificado no encontrado")).toBeVisible();
   await page.goto("/verificar/" + certificateId + "?hash=invalido");
   await expect(verification.getByText("Integridad no válida")).toBeVisible();
+  await page.goto("/verificar/" + certificateId + "?hash=" + "b".repeat(64));
+  await expect(verification.getByText("No se pudo verificar el certificado.")).toBeVisible();
+});
+
+test("asistencia conserva la consulta después de renovar un JWT y exige reintento explícito", async ({ page }) => {
+  await login(page, "ciudadano");
+  const widget = page.getByRole("complementary", { name: "Asistencia" });
+  await widget.getByRole("textbox", { name: "Consulta" }).fill("Consulta conservada");
+  const stale = await accessCookie(page);
+  await setSessionClock(page, stale, { expireJwt: true });
+  let attempts = 0;
+  page.on("request", (request) => {
+    if (request.method() === "POST" && request.url().endsWith("/api/asistencia")) attempts++;
+  });
+  await widget.locator("form").evaluate((form: HTMLFormElement) => form.requestSubmit());
+  await expect(widget.getByText("Sesión verificada. Puedes reintentar la consulta.")).toBeVisible();
+  await expect(page).toHaveURL("/ciudadano");
+  await expect(widget.getByRole("textbox")).toHaveValue("Consulta conservada");
+  expect(await accessCookie(page)).not.toBe(stale);
+  expect(attempts).toBe(1);
+  await widget.getByRole("button", { name: "Reintentar consulta" }).click();
+  await expect(widget.getByText("Respuesta de prueba.")).toBeVisible();
+  expect(attempts).toBe(2);
+});
+
+test("asistencia elimina cookies si el perfil confirma que la sesión expiró", async ({ page }) => {
+  await login(page, "ciudadano");
+  const widget = page.getByRole("complementary", { name: "Asistencia" });
+  await widget.getByRole("textbox", { name: "Consulta" }).fill("Consulta sin sesión");
+  await setSessionClock(page, await accessCookie(page), { inactiveMs: limits.inactivitySeconds[1] * 1000 });
+  await widget.locator("form").evaluate((form: HTMLFormElement) => form.requestSubmit());
+  await expect(page).toHaveURL("/login");
+  expect((await page.context().cookies()).filter(({ name }) => name.startsWith("autocheck-"))).toHaveLength(0);
 });
 
 test("asistencia muestra la contingencia y cabe en el ancho móvil del esqueleto", async ({ page }) => {

@@ -70,6 +70,18 @@ export function watchAvailability({
   const controller = new AbortController();
   let pending = false;
   let dirty = false;
+  let expiration: ReturnType<typeof setTimeout> | undefined;
+  const pollMs = 30_000;
+
+  function scheduleExpiration(snapshot: Snapshot) {
+    clearTimeout(expiration);
+    const now = Date.now();
+    const next = snapshot.bloques.reduce((earliest, block) => {
+      const at = block.estado === "RETENIDO" && block.expiraUtc ? Date.parse(block.expiraUtc) : NaN;
+      return at > now ? Math.min(earliest, at) : earliest;
+    }, Infinity);
+    if (next - now <= 2_147_483_647) expiration = setTimeout(invalidate, next - now);
+  }
 
   async function readUntilCurrent() {
     pending = true;
@@ -78,7 +90,10 @@ export function watchAvailability({
         dirty = false;
         try {
           const snapshot = await read(centroId, fecha, controller.signal);
-          if (!controller.signal.aborted && !dirty) onSnapshot(snapshot);
+          if (!controller.signal.aborted && !dirty) {
+            scheduleExpiration(snapshot);
+            onSnapshot(snapshot);
+          }
         } catch (error) {
           if (!controller.signal.aborted) onError(error);
         }
@@ -101,8 +116,11 @@ export function watchAvailability({
     onError(error);
   }
   invalidate();
+  const polling = setInterval(invalidate, pollMs);
   return () => {
     controller.abort();
+    clearInterval(polling);
+    clearTimeout(expiration);
     disconnect?.();
   };
 }

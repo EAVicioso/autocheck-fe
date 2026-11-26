@@ -93,6 +93,9 @@ const server = createServer(async (request, response) => {
     }
     if (route === "GET /api/certificados/" + certificadoId + "/verificacion") {
       if (token) return problem(response, 400, "SOLICITUD_INVALIDA");
+      if (url.searchParams.get("hash") === "b".repeat(64)) {
+        return json(response, 200, { certificadoId, emisionUtc: "fecha inválida", centro: "Centro de prueba", resultado: "Aprobado" });
+      }
       if (url.searchParams.get("hash") !== "a".repeat(64)) return problem(response, 409, "INTEGRIDAD_NO_VALIDA");
       return json(response, 200, {
         certificadoId, emisionUtc: "2026-11-24T04:00:00Z", centro: "Centro de prueba",
@@ -103,6 +106,9 @@ const server = createServer(async (request, response) => {
       return problem(response, 404, "CERTIFICADO_NO_ENCONTRADO");
     }
 
+    if (route === "POST /api/asistencia" && (!session || session.expiredToken || unusable)) {
+      return json(response, 401, { respuesta: "Consulta rechazada.", categoria: "NO_DETERMINADA", codigo: "SOLICITUD_INVALIDA" });
+    }
     if (!session || session.expiredToken) return problem(response, 401, "SOLICITUD_RECHAZADA");
     if (route === "POST /api/auth/logout") {
       actor.revoked = true;

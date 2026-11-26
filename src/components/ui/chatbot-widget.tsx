@@ -10,7 +10,7 @@ import { ErrorState } from "./feedback";
 import { FormField } from "./form-field";
 
 export function ChatbotWidget({ onUnauthorized, send = askAssistance }: {
-  onUnauthorized(): void;
+  onUnauthorized(signal: AbortSignal): void | Promise<"renewed" | "invalid" | "unavailable">;
   send?: typeof askAssistance;
 }) {
   const { control, handleSubmit, formState, reset } = useForm({
@@ -30,7 +30,11 @@ export function ChatbotWidget({ onUnauthorized, send = askAssistance }: {
         const result = await send(input, controller.signal);
         if (controller.signal.aborted) return;
         if (result.status === 401) {
-          onUnauthorized();
+          const session = await onUnauthorized(controller.signal);
+          if (controller.signal.aborted || !session || session === "invalid") return;
+          setFeedback({ unavailable: true, message: session === "renewed"
+            ? "Sesión verificada. Puedes reintentar la consulta."
+            : "No se pudo verificar la sesión. Intenta de nuevo." });
           return;
         }
         const unavailable = result.source === "local-timeout" || result.status === 503;

@@ -3,6 +3,29 @@ import { randomUUID } from "node:crypto";
 import { actors } from "./fixtures/srs";
 import { authorize, endpoint, loginPage } from "./fixtures/fullstack";
 
+type NextTestWindow = Window & { next?: { router?: { push(path: string): void } } };
+
+test("PA-11 rechaza al ciudadano en entradas directas y navegaciones App Router", async ({ page }) => {
+  await loginPage(page, "citizen");
+  await expect(page).toHaveURL("/ciudadano");
+  for (const [path, title] of [["/inspector", "Área de inspección"], ["/admin", "Área administrativa"]]) {
+    await page.goto(path);
+    await expect(page.getByText("This page could not be found.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: title })).toHaveCount(0);
+    await page.goto("/ciudadano");
+    await expect(page.getByRole("heading", { name: "Área ciudadana" })).toBeVisible();
+    await page.waitForFunction(() => typeof (window as NextTestWindow).next?.router?.push === "function");
+    const response = page.waitForResponse((res) => new URL(res.url()).pathname === path && res.request().headers().rsc === "1");
+    await page.evaluate((href) => {
+      (window as NextTestWindow).next?.router?.push(href);
+    }, path);
+    await response;
+    await expect(page.getByText("This page could not be found.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: title })).toHaveCount(0);
+    await expect(page).toHaveURL(path);
+  }
+});
+
 test("PA-01 registra la cuenta por la UI y obtiene el perfil ciudadano", async ({ page }, info) => {
   test.skip(info.project.name !== "desktop-chromium", "El alta se verifica una vez contra los mismos datos.");
   const correo = "alta-" + randomUUID() + "@example.test";

@@ -1,5 +1,51 @@
-import { expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { subscribeAvailability, watchAvailability } from "./realtime";
+
+afterEach(() => vi.useRealTimers());
+
+it.each(["sin canal", "con un evento perdido"])("revalida REST por polling %s y cancela al desmontar", async (scenario) => {
+  vi.useFakeTimers();
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "");
+  const read = vi.fn<NonNullable<Parameters<typeof watchAvailability>[0]["read"]>>()
+    .mockResolvedValue({ zonaHoraria: "America/Santo_Domingo", bloques: [] });
+  const close = watchAvailability({
+    centroId: "centro", fecha: "2026-11-23", read, onSnapshot: vi.fn(), onError: vi.fn(),
+    connect: scenario === "con un evento perdido" ? () => () => {} : undefined,
+  });
+  try {
+    await vi.advanceTimersByTimeAsync(29_999);
+    expect(read).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(read).toHaveBeenCalledTimes(2);
+    close();
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(read).toHaveBeenCalledTimes(2);
+  } finally {
+    close();
+    vi.unstubAllEnvs();
+  }
+});
+
+it("reconsulta al vencer la retención y no entra en bucle con un snapshot vencido", async () => {
+  vi.useFakeTimers();
+  const expires = Date.now() + 5_000;
+  const read = vi.fn<NonNullable<Parameters<typeof watchAvailability>[0]["read"]>>()
+    .mockResolvedValue({ zonaHoraria: "America/Santo_Domingo", bloques: [{
+      estado: "RETENIDO", rampaId: "rampa", inicioUtc: new Date(expires).toISOString(), expiraUtc: new Date(expires).toISOString(),
+    }] });
+  const close = watchAvailability({
+    centroId: "centro", fecha: "2026-11-23", read, connect: () => () => {}, onSnapshot: vi.fn(), onError: vi.fn(),
+  });
+  try {
+    await vi.advanceTimersByTimeAsync(4_999);
+    expect(read).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(2);
+    expect(read).toHaveBeenCalledTimes(2);
+  } finally {
+    close();
+  }
+});
 
 it("filtra Broadcast por centro y revalida tras cada suscripción", () => {
   let emit: (event: { payload: { centroId: string } }) => void = () => {};

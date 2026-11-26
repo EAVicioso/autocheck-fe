@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       if (!input.success) return bffResponse(400);
       const result = await session.api(false).request("POST /api/asistencia", { body: input.data }, { signal, refresh: false });
       const reply = assistanceReply.safeParse(result.ok ? result.body : result.error);
-      return bffResponse(result.status, reply.success ? reply.data : undefined, result.headers);
+      return session.commit(bffResponse(result.status, reply.success ? reply.data : undefined, result.headers));
     });
   } catch (error) {
     if (error instanceof RequestFailure && error.kind === "timeout") {

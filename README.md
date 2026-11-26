@@ -29,7 +29,14 @@ El modo rápido de Playwright utiliza un doble HTTP. Para regenerar el contrato 
 
 ## E2E con la API real
 
-El workflow [Frontend CI](.github/workflows/ci.yml) necesita el secret `AUTOCHECK_API_READ_TOKEN` con permiso **Contents: Read** sobre `EAVicioso/autocheck-api`. Opcionalmente fija la revisión con la variable de Actions `AUTOCHECK_API_REF` (por defecto `main`). Los proveedores y el firmante académico usan valores de prueba creados en el stack.
+El workflow [Frontend CI](.github/workflows/ci.yml) fija el SHA del backend y usa el token de Actions para leer el repositorio público. Si el backend pasa a ser privado, configura el secret `AUTOCHECK_API_READ_TOKEN` con permiso **Contents: Read** sobre `EAVicioso/autocheck-api`. Los proveedores y el firmante académico usan valores de prueba creados en el stack.
+
+| Criterios | Evidencia actual |
+| --- | --- |
+| PA-01/02/11 | Navegador para registro, login, salida y rechazo de portales. HTTP para bloqueo y permisos de usuarios. |
+| PA-03/04/12 | HTTP para disponibilidad, pago, idempotencia y confirmación. Los recorridos de cita y pago requieren pantallas conectadas. |
+| PA-05/06/07/10 | HTTP para inspección, historial, emisión y PDF. Navegador para QR público. Los recorridos de inspección e historial requieren pantallas conectadas. |
+| PA-08/09/13 | Navegador para asistencia. HTTP para métricas y auditoría. Los recorridos de administración requieren pantallas conectadas. |
 
 Con Docker activo, coloca el checkout del backend en `.ci/autocheck-api` o ajusta `AUTOCHECK_API_CHECKOUT`. Desde la raíz, en PowerShell:
 

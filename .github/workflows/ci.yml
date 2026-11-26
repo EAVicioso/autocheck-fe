@@ -37,9 +37,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: EAVicioso/autocheck-api
-          ref: ${{ vars.AUTOCHECK_API_REF || 'main' }}
+          ref: 813d8b65a65818104c9987734b5ddc4f07864cb8
           path: .ci/autocheck-api
-          token: ${{ secrets.AUTOCHECK_API_READ_TOKEN }}
+          token: ${{ secrets.AUTOCHECK_API_READ_TOKEN || github.token }}
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
@@ -53,6 +53,17 @@ jobs:
           curl --fail --retry 60 --retry-all-errors --retry-delay 2 http://127.0.0.1:3401/health/ready
           curl --fail --retry 60 --retry-all-errors --retry-delay 2 http://127.0.0.1:3400/
       - run: npx playwright test
+      - name: Collect Compose diagnostics
+        if: failure()
+        run: |
+          mkdir -p ci-diagnostics
+          docker compose -f docker-compose.e2e.yml ps --all > ci-diagnostics/compose-status.txt 2>&1 || true
+          docker compose -f docker-compose.e2e.yml logs --no-color > ci-diagnostics/compose.log 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: compose-diagnostics
+          path: ci-diagnostics/
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
