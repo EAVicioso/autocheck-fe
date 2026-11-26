@@ -1,6 +1,8 @@
 import type { Operations, Problem } from "@/shared/api/contract.generated";
 import type { SessionProfile } from "./profile";
 
+export const refreshRejectedHeader = "x-autocheck-refresh-rejected";
+
 type Actions = {
   perfil: { input: undefined; output: SessionProfile };
   login: { input: Operations["POST /api/auth/login"]["input"]["body"]; output: SessionProfile };
@@ -25,11 +27,17 @@ export class SessionActionError extends Error {
 export async function sessionAction<K extends keyof Actions>(
   action: K, body: Actions[K]["input"], signal?: AbortSignal,
 ): Promise<Actions[K]["output"]> {
-  const response = await fetch("/api/session/" + action, {
+  const send = () => fetch("/api/session/" + action, {
     method: "POST", credentials: "same-origin", cache: "no-store", signal,
     headers: body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+  let response = await send();
+  if ((action === "perfil" || action === "actividad") && response.status === 401
+    && response.headers.get(refreshRejectedHeader) === "1") {
+    await response.body?.cancel();
+    response = await send();
+  }
   if (!response.ok) {
     const problem = response.headers.get("Content-Type")?.startsWith("application/problem+json")
       ? await response.json().catch(() => null) as Problem | null : null;

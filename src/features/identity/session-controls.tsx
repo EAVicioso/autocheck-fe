@@ -9,9 +9,14 @@ import { useSession } from "./session-context";
 
 export function SessionControls({ role }: { role: Rol }) {
   const session = useSession();
+  const { status, revalidate } = session;
   const router = useRouter();
   const { notify } = useNotifications();
   const [closing, setClosing] = useState(false);
+
+  useEffect(() => {
+    if (status === "loading") void revalidate();
+  }, [status, revalidate]);
 
   useEffect(() => {
     if (closing) return;

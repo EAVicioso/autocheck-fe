@@ -52,7 +52,7 @@ export function backendSession(source: CookieSource) {
     if (!refresh) return undefined;
     const result = await rotate(refresh);
     if (!result.ok) {
-      if (result.kind === "application-session") clear();
+      // A concurrent response may already have installed a newer cookie pair.
       throw new RefreshRejected(result);
     }
     establish(result.body);

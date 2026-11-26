@@ -30,15 +30,16 @@ test("PA-11 rechaza al ciudadano en entradas directas y navegaciones App Router"
 test("PA-01 registra la cuenta por la UI y obtiene el perfil ciudadano", async ({ page }, info) => {
   test.skip(info.project.name !== "desktop-chromium", "El alta se verifica una vez contra los mismos datos.");
   const correo = "alta-" + randomUUID() + "@example.test";
+  const contrasena = "ñññññññ١";
   await page.goto("/registro");
   await page.getByLabel("Nombre").fill("Ciudadano E2E");
   await page.getByLabel("Correo electrónico").fill(correo);
-  await page.getByLabel("Contraseña", { exact: true }).fill(actors.citizen.contrasena);
+  await page.getByLabel("Contraseña", { exact: true }).fill(contrasena);
   await page.getByRole("button", { name: "Registrarme" }).click();
   await expect(page.getByText("Cuenta activa. Ya puedes iniciar sesión.")).toBeVisible();
   await page.goto("/login");
   await page.getByLabel("Correo electrónico").fill(correo);
-  await page.getByLabel("Contraseña", { exact: true }).fill(actors.citizen.contrasena);
+  await page.getByLabel("Contraseña", { exact: true }).fill(contrasena);
   await page.getByRole("button", { name: "Iniciar sesión" }).click();
   await expect(page.getByRole("heading", { name: "Área ciudadana" })).toBeVisible();
 });

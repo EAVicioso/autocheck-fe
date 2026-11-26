@@ -139,7 +139,8 @@ export function createApiClient(options: Options) {
       const first = await send(deadline, originalToken);
       if (first.ok || metadata.auth !== "bearer") return first;
       if (first.kind === "application-session") options.onInvalidSession?.();
-      const canReplay = metadata.method === "GET" || metadata.idempotent;
+      // A transport challenge rejects the request before recording activity.
+      const canReplay = metadata.method === "GET" || metadata.idempotent || operation === "POST /api/auth/actividad";
       if (first.kind !== "transport-401" || !canReplay || metadata.assistance || refresh === false || !options.refresh) return first;
 
       const currentToken = options.token?.();

@@ -50,10 +50,28 @@ describe("contrato HTTP", () => {
     const refresh = vi.fn(async () => "rotated");
     const fetcher = vi.fn<typeof fetch>(async () => transport401());
     const client = createApiClient({ baseUrl, fetch: fetcher, refresh });
-    await client.request("POST /api/auth/actividad", {});
+    await client.request("POST /api/auth/logout", {});
     await client.request("POST /api/asistencia", { body: { consulta: "Horario" } });
     expect(refresh).not.toHaveBeenCalled();
     expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("registra actividad una vez tras renovar por un challenge de transporte", async () => {
+    const refresh = vi.fn(async () => "rotated");
+    const clear = vi.fn();
+    const fetcher = vi.fn<typeof fetch>()
+      .mockImplementationOnce(async () => transport401())
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(Response.json({ status: 401, codigo: "SESION_EXPIRADA", traceId: "fixture" },
+        { status: 401, headers: { "Content-Type": "application/problem+json" } }));
+    const client = createApiClient({ baseUrl, fetch: fetcher, token: () => "expired", refresh, onInvalidSession: clear });
+
+    await expect(client.request("POST /api/auth/actividad", {})).resolves.toMatchObject({ ok: true, status: 204 });
+    await expect(client.request("POST /api/auth/actividad", {})).resolves.toMatchObject({ kind: "application-session" });
+    expect(fetcher.mock.calls.map(([, init]) => new Headers(init?.headers).get("Authorization")))
+      .toEqual(["Bearer expired", "Bearer rotated", "Bearer expired"]);
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(clear).toHaveBeenCalledTimes(1);
   });
 
   it("fija payload y clave de idempotencia para reintentar un resultado incierto", async () => {

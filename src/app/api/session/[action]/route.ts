@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { refreshRejectedHeader } from "@/features/identity/bff-client";
 import { loginSchema, recoverySchema, registrationSchema, resetSchema } from "@/features/identity/schemas";
 import { backendSession, RefreshRejected } from "@/features/identity/session-server";
 import { autoCheckApi } from "@/shared/api/server";
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest, context: RouteContext<"/api/ses
       }
       case "actividad": {
         if (!session.access()) return bffResponse(401);
-        const result = await session.api(false).request("POST /api/auth/actividad", {}, { signal, refresh: false });
+        const result = await session.api(true).request("POST /api/auth/actividad", {}, { signal });
         return session.commit(relay(result));
       }
       case "realtime": {
@@ -94,7 +95,11 @@ export async function POST(request: NextRequest, context: RouteContext<"/api/ses
       default: return bffResponse(404);
     }
   } catch (error) {
-    if (error instanceof RefreshRejected) return session.commit(relay(error.result));
+    if (error instanceof RefreshRejected) {
+      const response = relay(error.result);
+      if (error.result.kind === "application-session") response.headers.set(refreshRejectedHeader, "1");
+      return session.commit(response);
+    }
     return session.commit(bffResponse(503));
   }
 }

@@ -35,7 +35,7 @@ test("landing, alta, recuperación y restablecimiento ejecutan el esqueleto", as
   await page.getByRole("link", { name: "Registrarme" }).click();
   await page.getByLabel("Nombre").fill("Fixture");
   await page.getByLabel("Correo electrónico").fill("nuevo@example.invalid");
-  await page.getByLabel("Contraseña", { exact: true }).fill("Fixture123");
+  await page.getByLabel("Contraseña", { exact: true }).fill("ñññññññ١");
   await page.getByRole("button", { name: "Registrarme" }).click();
   await expect(page.getByText("Confirma tu correo para iniciar sesión.")).toBeVisible();
 
@@ -45,7 +45,7 @@ test("landing, alta, recuperación y restablecimiento ejecutan el esqueleto", as
   await expect(page.getByText("Si la cuenta existe, recibirás instrucciones de recuperación.")).toBeVisible();
 
   await page.goto("/restablecimiento?token=fixture");
-  await page.getByLabel("Nueva contraseña").fill("Fixture123");
+  await page.getByLabel("Nueva contraseña").fill("ñññññññ١");
   await page.getByRole("button", { name: "Restablecer contraseña" }).click();
   await expect(page.getByText("Contraseña restablecida. Inicia sesión de nuevo.")).toBeVisible();
   await expect(page).toHaveURL("/restablecimiento");
@@ -100,6 +100,43 @@ test("deduplica dos refresh simultáneos y el polling no registra actividad", as
   await expect(page.getByRole("button", { name: "Enviar consulta" })).toHaveCount(0);
   expect((await page.context().cookies()).some(({ name }) => name === "autocheck-refresh")).toBe(false);
   expect(await setSessionClock(page, access, {})).toMatchObject({ refreshes: 1, activity: 0 });
+});
+
+test("un canje tardío con cookies antiguas conserva la sesión renovada", async ({ page }) => {
+  await login(page, "ciudadano");
+  await expect(page.getByRole("button", { name: "Enviar consulta" })).toBeVisible();
+  const access = await accessCookie(page);
+  const oldCookies = (await page.context().cookies())
+    .filter(({ name }) => name.startsWith("autocheck-"))
+    .map(({ name, value }) => name + "=" + value).join("; ");
+  await setSessionClock(page, access, { expireJwt: true });
+
+  const current = await page.request.post("/api/session/perfil", { headers: { Origin: app } });
+  expect(current.status()).toBe(200);
+  const rotated = await accessCookie(page);
+  expect(rotated).not.toBe(access);
+
+  const late = await page.request.post("/api/session/perfil", { headers: { Origin: app, Cookie: oldCookies } });
+  expect(late.status()).toBe(401);
+  expect(late.headers()["set-cookie"]).toBeUndefined();
+  expect(await accessCookie(page)).toBe(rotated);
+  expect((await page.request.post("/api/session/perfil", { headers: { Origin: app } })).status()).toBe(200);
+  expect(await setSessionClock(page, rotated, {})).toMatchObject({ refreshes: 1 });
+});
+
+test("la primera interacción tras vencer el JWT registra actividad de la sesión renovada", async ({ page }) => {
+  await login(page, "ciudadano");
+  const input = page.getByRole("textbox", { name: "Consulta" });
+  await expect(input).toBeVisible();
+  const stale = await accessCookie(page);
+  await setSessionClock(page, stale, { inactiveMs: limits.inactivitySeconds[0] * 1000, expireJwt: true });
+
+  const reported = page.waitForResponse((response) => response.url().endsWith("/api/session/actividad"));
+  await input.press("Shift");
+  expect((await reported).status()).toBe(204);
+  const rotated = await accessCookie(page);
+  expect(rotated).not.toBe(stale);
+  expect(await setSessionClock(page, rotated, {})).toMatchObject({ refreshes: 1, activity: 1 });
 });
 
 test("el BFF rechaza CSRF y logout revoca y elimina cookies", async ({ page }) => {

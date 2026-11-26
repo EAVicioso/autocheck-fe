@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 import type { Operations } from "@/shared/api/contract.generated";
 import { sessionAction, SessionActionError } from "./bff-client";
-import type { SessionProfile } from "./profile";
+import { roleHome, type SessionProfile } from "./profile";
 
 type SessionState = { status: "loading" | "anonymous" | "unavailable"; profile: null }
   | { status: "active"; profile: SessionProfile };
@@ -12,7 +12,7 @@ type SessionContextValue = SessionState & {
   login(body: Login): Promise<SessionProfile>;
   logout(): Promise<void>;
   revalidate(): Promise<SessionProfile | null>;
-  recordActivity(): Promise<void>;
+  recordActivity(): Promise<boolean>;
   clear(): void;
 };
 
@@ -46,7 +46,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [clear]);
 
   useEffect(() => {
-    void revalidate();
+    // Protected pages validate the session before mounting SessionControls.
+    // A refresh here could consume the token just before the guard redirects.
+    const path = window.location.pathname;
+    if (!Object.values(roleHome).some((home) => path === home || path.startsWith(home + "/"))) {
+      void revalidate();
+    }
     const timer = setInterval(() => {
       if (document.visibilityState === "visible") void revalidate();
     }, 60_000);
@@ -84,16 +89,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }
 
   async function recordActivity() {
-    if (session.status !== "active") return;
+    if (session.status !== "active" || transitioning.current) return false;
     try {
       await sessionAction("actividad", undefined);
+      return true;
     } catch (error) {
       if (error instanceof SessionActionError && error.status === 401) await revalidate();
       throw error;
     }
   }
 
-  const markActivity = useEffectEvent(() => void recordActivity().catch(() => {}));
+  const markActivity = useEffectEvent(() => recordActivity());
   const expireLocally = useEffectEvent(() => void logout().catch(() => {}));
   const actorId = session.profile?.id;
 
@@ -103,12 +109,27 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const channel = typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel("autocheck-session-activity");
     let lastActivity = Date.now();
     let lastReported = 0;
+    let reporting = false;
+    let active = true;
     let timer: ReturnType<typeof setTimeout>;
     function checkIdle() {
       clearTimeout(timer);
       const remaining = idleMs - (Date.now() - lastActivity);
       if (remaining <= 0) expireLocally();
       else timer = setTimeout(checkIdle, remaining);
+    }
+    async function reportActivity(at: number) {
+      reporting = true;
+      try {
+        if (await markActivity() && active) {
+          lastReported = Date.now();
+          channel?.postMessage({ actorId, at });
+        }
+      } catch {
+        // The next interaction can report activity after a failed request.
+      } finally {
+        reporting = false;
+      }
     }
     function onInput(event: Event) {
       if (!event.isTrusted) return;
@@ -118,11 +139,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return;
       }
       lastActivity = now;
-      if (now - lastReported >= 15_000) {
-        lastReported = now;
-        markActivity();
-        channel?.postMessage({ actorId, at: now });
-      }
+      if (!reporting && now - lastReported >= 15_000) void reportActivity(now);
     }
     if (channel) channel.onmessage = ({ data }) => {
       if (data?.actorId === actorId && typeof data.at === "number" && data.at <= Date.now()) {
@@ -134,6 +151,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     document.addEventListener("visibilitychange", checkIdle);
     checkIdle();
     return () => {
+      active = false;
       clearTimeout(timer);
       channel?.close();
       window.removeEventListener("pointerdown", onInput);
