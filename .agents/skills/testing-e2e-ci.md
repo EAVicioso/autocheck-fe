@@ -1,0 +1,8 @@
+# Pruebas y CI
+
+Ejecuta desde la raíz `npm ci`, `npx next typegen`, `npx tsc --noEmit`, `npx eslint . --max-warnings=0`, `npm run test:unit` y `npm run build`. Agrega Vitest y RTL co-localizados para todo feature o fix. Actualiza E2E según PA-01 a PA-13. Usa fixtures, reloj controlado cuando proceda, proveedores aislados y datos sintéticos. Prohíbe tests vacíos, supresiones de lint/tipado y claims de aceptación sin evidencia.
+
+- `npm run test:e2e` ejecuta la suite rápida con HTTP simulado. El modo `AUTOCHECK_E2E_FULLSTACK=1` conecta Next a la API .NET real con Compose. Prueba UI con Chromium, WebKit móvil y Chromium en tableta táctil. Los casos de negocio sin pantalla se prueban por Playwright APIRequestContext.
+- Los casos base están en `e2e/auth-rbac.spec.ts`, `e2e/appointments-payment.spec.ts`, `e2e/inspection-certificate.spec.ts` y `e2e/dashboard-audit-chatbot.spec.ts`. Los vectores DT-01–DT-13 viven en `e2e/fixtures/`. Verifica límites 299/300/301 s, 59:59/60:00, 14:59/15:00, defectos con M=3/M=4 y ventanas con 19/20/21 aprobaciones. La tabla de vectores es un insumo y no acredita cobertura ejecutada de todos los límites.
+- El checkout privado de CI usa `AUTOCHECK_API_READ_TOKEN` con lectura de contenidos del backend. `AUTOCHECK_API_REF` es variable opcional para fijar una revisión. Nunca ejecuta el job con credenciales en PRs de forks.
+- Aísla puertos, PostgreSQL, Mongo y dobles de Supabase Auth, SMTP y Gemini. El SMTP del backend actual reemplaza la integración directa con SendGrid. Configura firma PDF efímera. Verifica la matriz y los logs antes de declarar éxito full-stack. Cierra el stack con `docker compose -f docker-compose.e2e.yml down --volumes`.
