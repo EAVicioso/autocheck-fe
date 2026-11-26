@@ -1,0 +1,129 @@
+x-api: &api
+  image: autocheck-api-e2e:local
+  build:
+    context: ${AUTOCHECK_API_CHECKOUT:-./.ci/autocheck-api}
+    dockerfile: AutoCheck.Api/Dockerfile
+  network_mode: service:postgres
+  environment:
+    ASPNETCORE_ENVIRONMENT: Testing
+    Testing__JwtKey: autocheck-e2e-fixture-signing-key-only-32bytes
+    ConnectionStrings__Postgres: Host=127.0.0.1;Database=autocheck;Username=postgres;Password=e2e-only
+    Supabase__Url: https://providers
+    Supabase__PublishableKey: e2e-only
+    Supabase__SecretKey: e2e-only
+    Gemini__ApiKey: e2e-only
+    MongoDb__ConnectionString: mongodb://127.0.0.1:27017
+    Certificates__PublicBaseUrl: http://127.0.0.1:3401
+    Certificates__PfxPath: /e2e/tls/certificate.pfx
+    Certificates__PfxPassword: e2e-only
+    Smtp__Host: providers
+    Smtp__Port: 2465
+    Smtp__Transport: SslOnConnect
+    Smtp__Username: e2e
+    Smtp__Password: e2e-only
+    Smtp__From: sender@example.test
+    SSL_CERT_FILE: /e2e/tls/cert.pem
+  volumes:
+    - tls:/e2e/tls:ro
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: autocheck
+      POSTGRES_PASSWORD: e2e-only
+    tmpfs:
+      - /var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:3401:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d autocheck"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+  tls:
+    image: node:26.13.0-bookworm
+    command:
+      - sh
+      - -ec
+      - >
+        openssl req -x509 -newkey rsa:2048 -nodes -days 2
+        -subj /CN=providers -addext subjectAltName=DNS:providers,DNS:generativelanguage.googleapis.com
+        -keyout /tls/key.pem -out /tls/cert.pem &&
+        openssl pkcs12 -export -inkey /tls/key.pem -in /tls/cert.pem
+        -out /tls/certificate.pfx -passout pass:e2e-only &&
+        chmod 644 /tls/cert.pem /tls/certificate.pfx
+    volumes:
+      - tls:/tls
+
+  providers:
+    image: node:26.13.0-bookworm
+    command: ["node", "/fixtures/providers.mjs"]
+    volumes:
+      - tls:/tls:ro
+      - ./e2e/fixtures:/fixtures:ro
+    networks:
+      default:
+        aliases: [generativelanguage.googleapis.com]
+    depends_on:
+      tls:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('net').connect(443, '127.0.0.1').on('connect', function () { this.end() }).on('error', () => process.exit(1))"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  migrate:
+    <<: *api
+    command: ["--migrate"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:8
+    network_mode: service:postgres
+    tmpfs:
+      - /data/db
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  seed:
+    image: postgres:17
+    environment:
+      PGPASSWORD: e2e-only
+    command: ["psql", "-h", "postgres", "-U", "postgres", "-d", "autocheck", "-v", "ON_ERROR_STOP=1", "-f", "/seed.sql"]
+    volumes:
+      - ./e2e/fixtures/seed.sql:/seed.sql:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  api:
+    <<: *api
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+      providers:
+        condition: service_healthy
+      mongo:
+        condition: service_started
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.e2e
+    environment:
+      AUTOCHECK_API_URL: http://postgres:8080
+      AUTOCHECK_APP_ORIGIN: http://127.0.0.1:3400
+    ports:
+      - "127.0.0.1:3400:3400"
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  tls:

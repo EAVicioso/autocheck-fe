@@ -20,9 +20,28 @@ npm run contract:check
 npm run lint
 npm run typecheck
 npm run build
-npm test
+npm run test:unit
 npx playwright install chromium
 npm run test:e2e
 ```
 
-El navegador de Playwright usa un backend local aislado. Para regenerar el contrato usa `npm run contract:generate`. Consulta [AGENTS.md](AGENTS.md) para las reglas de trabajo y el estado de Stitch.
+El modo rápido de Playwright utiliza un doble HTTP. Para regenerar el contrato usa `npm run contract:generate`. Consulta [AGENTS.md](AGENTS.md) para las reglas de trabajo y el estado de Stitch.
+
+## E2E con la API real
+
+El workflow [Frontend CI](.github/workflows/ci.yml) necesita el secret `AUTOCHECK_API_READ_TOKEN` con permiso **Contents: Read** sobre `EAVicioso/autocheck-api`. Opcionalmente fija la revisión con la variable de Actions `AUTOCHECK_API_REF` (por defecto `main`). Los proveedores y el firmante académico usan valores de prueba creados en el stack.
+
+Con Docker activo, coloca el checkout del backend en `.ci/autocheck-api` o ajusta `AUTOCHECK_API_CHECKOUT`. Desde la raíz, en PowerShell:
+
+```powershell
+docker compose -f docker-compose.e2e.yml up --build -d
+curl.exe --fail --retry 60 --retry-all-errors --retry-delay 2 http://127.0.0.1:3401/health/ready
+curl.exe --fail --retry 60 --retry-all-errors --retry-delay 2 http://127.0.0.1:3400/
+npx playwright install chromium webkit
+$env:AUTOCHECK_E2E_FULLSTACK = "1"
+npx playwright test
+Remove-Item Env:AUTOCHECK_E2E_FULLSTACK
+docker compose -f docker-compose.e2e.yml down --volumes
+```
+
+PostgreSQL recibe migraciones del Dockerfile del backend y un seed local. Los tests de flujo que carecen de UI usan el cliente HTTP de Playwright contra la API real. Los fixtures de SRS identifican los límites faltantes de automatizar con el reloj real del backend.

@@ -11,6 +11,7 @@
     "contract:generate": "node scripts/generate-contract.mjs",
     "contract:check": "node scripts/generate-contract.mjs --check",
     "test": "vitest run",
+    "test:unit": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test"
   },
