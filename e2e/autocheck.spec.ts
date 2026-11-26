@@ -147,6 +147,7 @@ test("conserva el hash del QR y maneja 200, 404 y 409", async ({ page }) => {
 
 test("asistencia conserva la consulta después de renovar un JWT y exige reintento explícito", async ({ page }) => {
   await login(page, "ciudadano");
+  await expect(page.getByRole("heading", { name: "Área ciudadana" })).toBeVisible();
   const widget = page.getByRole("complementary", { name: "Asistencia" });
   await widget.getByRole("textbox", { name: "Consulta" }).fill("Consulta conservada");
   const stale = await accessCookie(page);
@@ -168,12 +169,15 @@ test("asistencia conserva la consulta después de renovar un JWT y exige reinten
 
 test("asistencia elimina cookies si el perfil confirma que la sesión expiró", async ({ page }) => {
   await login(page, "ciudadano");
+  await expect(page.getByRole("heading", { name: "Área ciudadana" })).toBeVisible();
   const widget = page.getByRole("complementary", { name: "Asistencia" });
   await widget.getByRole("textbox", { name: "Consulta" }).fill("Consulta sin sesión");
   await setSessionClock(page, await accessCookie(page), { inactiveMs: limits.inactivitySeconds[1] * 1000 });
+  const profile = page.waitForResponse((response) => response.url().endsWith("/api/session/perfil") && response.status() === 401);
   await widget.locator("form").evaluate((form: HTMLFormElement) => form.requestSubmit());
+  await profile;
   await expect(page).toHaveURL("/login");
-  expect((await page.context().cookies()).filter(({ name }) => name.startsWith("autocheck-"))).toHaveLength(0);
+  await expect.poll(async () => (await page.context().cookies()).filter(({ name }) => name.startsWith("autocheck-")).length).toBe(0);
 });
 
 test("asistencia muestra la contingencia y cabe en el ancho móvil del esqueleto", async ({ page }) => {
