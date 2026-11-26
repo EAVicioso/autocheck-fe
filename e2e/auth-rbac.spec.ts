@@ -10,17 +10,18 @@ test("PA-11 rechaza al ciudadano en entradas directas y navegaciones App Router"
   await expect(page).toHaveURL("/ciudadano");
   for (const [path, title] of [["/inspector", "Área de inspección"], ["/admin", "Área administrativa"]]) {
     await page.goto(path);
-    await expect(page.getByText("This page could not be found.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "This page could not be found." })).toBeVisible();
     await expect(page.getByRole("heading", { name: title })).toHaveCount(0);
     await page.goto("/ciudadano");
     await expect(page.getByRole("heading", { name: "Área ciudadana" })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Consulta" })).toBeVisible();
     await page.waitForFunction(() => typeof (window as NextTestWindow).next?.router?.push === "function");
     const response = page.waitForResponse((res) => new URL(res.url()).pathname === path && res.request().headers().rsc === "1");
     await page.evaluate((href) => {
       (window as NextTestWindow).next?.router?.push(href);
     }, path);
     await response;
-    await expect(page.getByText("This page could not be found.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "This page could not be found." })).toBeVisible();
     await expect(page.getByRole("heading", { name: title })).toHaveCount(0);
     await expect(page).toHaveURL(path);
   }
