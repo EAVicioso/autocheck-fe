@@ -2,7 +2,8 @@ import { render, screen } from "@testing-library/react";
 import { expect, it } from "vitest";
 import Home from "./page";
 
-it("renders the starter page heading", () => {
+it("muestra la entrada pública de AutoCheck", () => {
   render(<Home />);
-  expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("To get started, edit the page.tsx file.");
+  expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("AutoCheck");
+  expect(screen.getByRole("link", { name: "Iniciar sesión" })).toHaveAttribute("href", "/login");
 });

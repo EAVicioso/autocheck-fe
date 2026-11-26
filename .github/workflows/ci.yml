@@ -1,0 +1,75 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['feat/**', 'fix/**', 'chore/**']
+
+permissions:
+  contents: read
+
+jobs:
+  quality-and-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx next typegen
+      - run: npx tsc --noEmit
+      - run: npx eslint . --max-warnings=0
+      - run: npm run contract:check
+      - run: npm run test:unit
+      - run: npm run build
+
+  e2e-fullstack:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AUTOCHECK_E2E_FULLSTACK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: EAVicioso/autocheck-api
+          ref: 813d8b65a65818104c9987734b5ddc4f07864cb8
+          path: .ci/autocheck-api
+          token: ${{ secrets.AUTOCHECK_API_READ_TOKEN || github.token }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Start API, providers and frontend
+        run: |
+          docker compose -f docker-compose.e2e.yml up --build -d
+          curl --fail --retry 60 --retry-all-errors --retry-delay 2 http://127.0.0.1:3401/health/ready
+          curl --fail --retry 60 --retry-all-errors --retry-delay 2 http://127.0.0.1:3400/
+      - run: npx playwright test
+      - name: Collect Compose diagnostics
+        if: failure()
+        run: |
+          mkdir -p ci-diagnostics
+          docker compose -f docker-compose.e2e.yml ps --all > ci-diagnostics/compose-status.txt 2>&1 || true
+          docker compose -f docker-compose.e2e.yml logs --no-color > ci-diagnostics/compose.log 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: compose-diagnostics
+          path: ci-diagnostics/
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
+      - name: Remove ephemeral stack
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml down --volumes

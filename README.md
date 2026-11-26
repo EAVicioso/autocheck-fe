@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AutoCheck Frontend
 
-## Getting Started
+Next.js App Router, React, TypeScript estricto y Tailwind CSS v4.
 
-First, run the development server:
+## Desarrollo local
 
-```bash
+Usa la versión de Node de [.nvmrc](.nvmrc) y el lockfile de npm.
+
+```sh
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copia [.env.example](.env.example) a `.env.local` y ajusta `AUTOCHECK_API_URL` para usar identidad, asistencia y la verificación pública. La API debe poder validar los JWT e identificar la sesión registrada. Si Next está detrás de un proxy que modifica el origen, configura `AUTOCHECK_APP_ORIGIN` con el origen público exacto. Usa HTTPS en producción para las cookies Secure. Las variables públicas de Supabase solo se requieren para Broadcast y deben estar presentes al compilar el frontend.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Verificación
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```sh
+npm run contract:check
+npm run lint
+npm run typecheck
+npm run build
+npm run test:unit
+npx playwright install chromium
+npm run test:e2e
+```
 
-## Learn More
+El modo rápido de Playwright utiliza un doble HTTP. Para regenerar el contrato usa `npm run contract:generate`. Consulta [AGENTS.md](AGENTS.md) para las reglas de trabajo y el estado de Stitch.
 
-To learn more about Next.js, take a look at the following resources:
+## E2E con la API real
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+El workflow [Frontend CI](.github/workflows/ci.yml) fija el SHA del backend y usa el token de Actions para leer el repositorio público. Si el backend pasa a ser privado, configura el secret `AUTOCHECK_API_READ_TOKEN` con permiso **Contents: Read** sobre `EAVicioso/autocheck-api`. Los proveedores y el firmante académico usan valores de prueba creados en el stack.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Criterios | Evidencia actual |
+| --- | --- |
+| PA-01/02/11 | Navegador para registro, login, salida y rechazo de portales. HTTP para bloqueo y permisos de usuarios. |
+| PA-03/04/12 | HTTP para disponibilidad, pago, idempotencia y confirmación. Los recorridos de cita y pago requieren pantallas conectadas. |
+| PA-05/06/07/10 | HTTP para inspección, historial, emisión y PDF. Navegador para QR público. Los recorridos de inspección e historial requieren pantallas conectadas. |
+| PA-08/09/13 | Navegador para asistencia. HTTP para métricas y auditoría. Los recorridos de administración requieren pantallas conectadas. |
 
-## Deploy on Vercel
+Con Docker activo, coloca el checkout del backend en `.ci/autocheck-api` o ajusta `AUTOCHECK_API_CHECKOUT`. Desde la raíz, en PowerShell:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```powershell
+docker compose -f docker-compose.e2e.yml up --build -d
+curl.exe --fail --retry 60 --retry-all-errors --retry-delay 2 http://127.0.0.1:3401/health/ready
+curl.exe --fail --retry 60 --retry-all-errors --retry-delay 2 http://127.0.0.1:3400/
+npx playwright install chromium webkit
+$env:AUTOCHECK_E2E_FULLSTACK = "1"
+npx playwright test
+Remove-Item Env:AUTOCHECK_E2E_FULLSTACK
+docker compose -f docker-compose.e2e.yml down --volumes
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+PostgreSQL recibe migraciones del Dockerfile del backend y un seed local. Los tests de flujo que carecen de UI usan el cliente HTTP de Playwright contra la API real. Los fixtures de SRS identifican los límites faltantes de automatizar con el reloj real del backend.
