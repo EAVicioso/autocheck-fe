@@ -13,4 +13,3 @@ export const assistanceReply = z.strictObject({
   categoria: z.enum(["USO_PLATAFORMA", "ITV", "FUERA_DE_ALCANCE", "NO_DETERMINADA"]),
   codigo: z.enum(["OK", "INFORMACION_INSUFICIENTE", "FUERA_DE_ALCANCE", "SOLICITUD_INVALIDA", "SERVICIO_NO_DISPONIBLE"]),
 }) satisfies z.ZodType<Asistencia>;
-
