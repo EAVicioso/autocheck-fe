@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/ui/layout";
 import { Suspense } from "react";
 import { LoginForm } from "@/features/identity/identity-form";
 
@@ -6,5 +7,5 @@ async function Login({ searchParams }: PageProps<"/login">) {
 }
 
 export default function LoginPage(props: PageProps<"/login">) {
-  return <><h1>Iniciar sesión</h1><Suspense><Login {...props} /></Suspense></>;
+  return <><PageHeader title="Iniciar sesión" /><Suspense><Login {...props} /></Suspense></>;
 }

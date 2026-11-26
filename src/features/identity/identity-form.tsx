@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type DefaultValues, type FieldValues, type Path, type Resolver } from "react-hook-form";
 import type { z } from "zod";
+import { Button, Input } from "@/components/ui/controls";
+import { FormField } from "@/components/ui/form-field";
+import { AlertBanner } from "@/components/ui/feedback";
 import { formErrorPath } from "@/shared/forms/problem-path";
 import { sessionAction, SessionActionError } from "./bff-client";
 import { roleHome } from "./profile";
@@ -19,6 +22,10 @@ type Field<T extends FieldValues> = {
   autoComplete?: string;
 };
 
+const subscribeHydration = () => () => {};
+const isHydrated = () => true;
+const beforeHydration = () => false;
+
 function IdentityForm<T extends FieldValues>({ resolver, defaults, fields, label, submit }: {
   resolver: Resolver<T>;
   defaults: DefaultValues<T>;
@@ -26,11 +33,12 @@ function IdentityForm<T extends FieldValues>({ resolver, defaults, fields, label
   label: string;
   submit(values: T): Promise<string | void>;
 }) {
-  const { formState, register, handleSubmit, getFieldState, setError } = useForm<T>({
+  const { formState, register, control, handleSubmit, setError } = useForm<T>({
     resolver, defaultValues: defaults,
   });
   const [message, setMessage] = useState("");
   const [done, setDone] = useState(false);
+  const ready = useSyncExternalStore(subscribeHydration, isHydrated, beforeHydration);
 
   const onSubmit = handleSubmit(async (values) => {
     setMessage("");
@@ -53,23 +61,16 @@ function IdentityForm<T extends FieldValues>({ resolver, defaults, fields, label
   });
 
   return (
-    <form noValidate onSubmit={onSubmit}>
-      {fields.map(({ name, label, type = "text", autoComplete }) => {
-        const binding = register(name);
-        if (type === "hidden") return <input key={name} type="hidden" {...binding} />;
-        const error = getFieldState(name, formState).error;
-        const id = "identity-" + name;
-        return (
-          <div key={name}>
-            <label htmlFor={id}>{label}</label>{" "}
-            <input id={id} type={type} autoComplete={autoComplete} {...binding}
-              aria-invalid={Boolean(error)} aria-describedby={error ? id + "-error" : undefined} />
-            {error && <p id={id + "-error"}>{error.message}</p>}
-          </div>
-        );
-      })}
-      <button type="submit" disabled={done || formState.isSubmitting}>{label}</button>
-      {message && <p role={done ? "status" : "alert"}>{message}</p>}
+    <form method="post" noValidate onSubmit={onSubmit}>
+      <fieldset disabled={!ready} className="space-y-3">
+      {fields.map(({ name, label, type = "text", autoComplete }) => type === "hidden"
+        ? <Input key={name} type="hidden" {...register(name)} />
+        : <FormField key={name} control={control} name={name} label={label}>
+          {(field) => <Input {...field} type={type} autoComplete={autoComplete} />}
+        </FormField>)}
+      <Button type="submit" disabled={done || formState.isSubmitting}>{label}</Button>
+      </fieldset>
+      {message && <AlertBanner variant={done ? "notice" : "error"}>{message}</AlertBanner>}
     </form>
   );
 }

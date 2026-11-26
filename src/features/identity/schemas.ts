@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const correo = z.string().trim().max(254).email("Escribe un correo válido.");
-const password = z.string().min(8).max(256).regex(/\p{L}/u).regex(/\p{N}/u);
+const password = z.string().min(8).max(256).regex(/^(?=.*[A-Za-z])(?=.*\d).{8,}$/, "Incluye al menos una letra y un número.");
 export const registrationSchema = z.strictObject({
   correo, contrasena: password, nombre: z.string().trim().min(1).max(120),
 });

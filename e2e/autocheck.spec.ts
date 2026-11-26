@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { limits } from "./fixtures/srs";
 
 const app = "http://127.0.0.1:3400";
 const api = "http://127.0.0.1:3401";
@@ -84,7 +85,7 @@ test("deduplica dos refresh simultáneos y el polling no registra actividad", as
   await login(page, "ciudadano");
   await expect(page.getByRole("heading", { name: "Área ciudadana" })).toBeVisible();
   const stale = await accessCookie(page);
-  await setSessionClock(page, stale, { inactiveMs: 60 * 60 * 1000 - 1, expireJwt: true });
+  await setSessionClock(page, stale, { inactiveMs: limits.inactivitySeconds[0] * 1000, expireJwt: true });
   const callProfile = () => page.request.post("/api/session/perfil", { headers: { Origin: app } });
   const responses = await Promise.all([callProfile(), callProfile()]);
   expect(responses.map((response) => response.status())).toEqual([200, 200]);
@@ -93,7 +94,7 @@ test("deduplica dos refresh simultáneos y el polling no registra actividad", as
   expect(await setSessionClock(page, access, {})).toMatchObject({ refreshes: 1, activity: 0 });
   await expect(page.getByRole("button", { name: "Enviar consulta" })).toBeVisible();
 
-  await setSessionClock(page, access, { inactiveMs: 60 * 60 * 1000 });
+  await setSessionClock(page, access, { inactiveMs: limits.inactivitySeconds[1] * 1000 });
   await page.clock.fastForward(60_001);
   await expect(page).toHaveURL("/login");
   await expect(page.getByRole("button", { name: "Enviar consulta" })).toHaveCount(0);
@@ -133,12 +134,13 @@ test("conserva el hash del QR y maneja 200, 404 y 409", async ({ page }) => {
   await page.goto("/verificar/" + certificateId + "?hash=" + hash);
   await expect(page).toHaveURL("/verificar/" + certificateId + "?hash=" + hash);
   await expect(verification.getByText("Centro de prueba")).toBeVisible();
-  await expect(verification.locator("dd")).toHaveText([certificateId, "2026-11-24T04:00:00Z", "Centro de prueba", "Aprobado"]);
+  await expect(verification.locator("dd")).toHaveText([certificateId, /Santo Domingo/, "Centro de prueba", "Aprobado"]);
+  await expect(verification.locator("time")).toHaveAttribute("datetime", "2026-11-24T04:00:00Z");
   await expect(page.getByText("Dato interno de fixture")).toHaveCount(0);
   await page.goto("/verificar/" + missingCertificateId + "?hash=" + hash);
-  await expect(verification.getByText("Certificado no encontrado.")).toBeVisible();
+  await expect(verification.getByText("Certificado no encontrado")).toBeVisible();
   await page.goto("/verificar/" + certificateId + "?hash=invalido");
-  await expect(verification.getByText("Integridad del certificado no válida.")).toBeVisible();
+  await expect(verification.getByText("Integridad no válida")).toBeVisible();
 });
 
 test("asistencia muestra la contingencia y cabe en el ancho móvil del esqueleto", async ({ page }) => {

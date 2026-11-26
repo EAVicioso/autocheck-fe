@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Rol } from "@/shared/api/contract.generated";
 import { useNotifications } from "@/shared/notifications/context";
+import { Button } from "@/components/ui/controls";
 import { useSession } from "./session-context";
 
 export function SessionControls({ role }: { role: Rol }) {
@@ -30,5 +31,5 @@ export function SessionControls({ role }: { role: Rol }) {
     }
   }
 
-  return <button type="button" disabled={closing} onClick={() => void logout()}>Cerrar sesión</button>;
+  return <Button size={role === "Inspector" ? "touch" : "default"} variant="secondary" disabled={closing} onClick={() => void logout()}>Cerrar sesión</Button>;
 }

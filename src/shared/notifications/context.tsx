@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, type ReactNode } from "react";
+import { Toast } from "@/components/ui/feedback";
 
 type Notice = { message: string; kind: "status" | "error" };
 const Notifications = createContext<{
@@ -13,7 +14,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   return (
     <Notifications value={{ notice, notify }}>
       {children}
-      <div role={notice?.kind === "error" ? "alert" : "status"}>{notice?.message}</div>
+      {notice && <Toast message={notice.message} variant={notice.kind === "error" ? "error" : "notice"} onDismiss={() => notify(null)} />}
     </Notifications>
   );
 }

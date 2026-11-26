@@ -1,29 +1,20 @@
 import { Suspense } from "react";
+import { QrVerificationCard } from "@/components/ui/qr-verification-card";
+import { AppShell, PageHeader } from "@/components/ui/layout";
+import { LoadingSkeleton } from "@/components/ui/feedback";
 import { verifyCertificate } from "@/features/certificates/public-verification";
 
 async function Verification({ params, searchParams }: PageProps<"/verificar/[id]">) {
   const [{ id }, { hash }] = await Promise.all([params, searchParams]);
   const result = await verifyCertificate(id, Array.isArray(hash) ? hash[0] : hash);
-  switch (result.state) {
-    case "verified": return (
-      <dl className="wrap-break-word">
-        <dt>Certificado</dt><dd>{result.certificadoId}</dd>
-        <dt>Emisión</dt><dd><time dateTime={result.emisionUtc}>{result.emisionUtc}</time></dd>
-        <dt>Centro</dt><dd>{result.centro}</dd>
-        <dt>Resultado</dt><dd>{result.resultado}</dd>
-      </dl>
-    );
-    case "missing": return <p>Certificado no encontrado.</p>;
-    case "integrity": return <p>Integridad del certificado no válida.</p>;
-    case "unavailable": return <p role="alert">No se pudo verificar el certificado.</p>;
-  }
+  return <QrVerificationCard verification={result} />;
 }
 
 export default function VerificationPage(props: PageProps<"/verificar/[id]">) {
   return (
-    <main>
-      <h1>Verificar certificado</h1>
-      <Suspense fallback={<p role="status">Verificando…</p>}><Verification {...props} /></Suspense>
-    </main>
+    <AppShell academicNotice={false}>
+      <PageHeader title="Verificar certificado" />
+      <Suspense fallback={<LoadingSkeleton label="Verificando…" />}><Verification {...props} /></Suspense>
+    </AppShell>
   );
 }

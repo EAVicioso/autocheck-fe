@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/ui/layout";
 import { Suspense } from "react";
 import Link from "next/link";
 import { ResetForm } from "@/features/identity/identity-form";
@@ -11,5 +12,5 @@ async function Reset({ searchParams }: PageProps<"/restablecimiento">) {
 }
 
 export default function ResetPage(props: PageProps<"/restablecimiento">) {
-  return <><h1>Restablecer contraseña</h1><Suspense><Reset {...props} /></Suspense><Link href="/login">Iniciar sesión</Link></>;
+  return <><PageHeader title="Restablecer contraseña" /><Suspense><Reset {...props} /></Suspense><Link href="/login">Iniciar sesión</Link></>;
 }

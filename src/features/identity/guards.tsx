@@ -2,6 +2,9 @@ import "server-only";
 import { Suspense, type ReactNode } from "react";
 import { notFound, redirect } from "next/navigation";
 import type { Rol } from "@/shared/api/contract.generated";
+import { AppShell, PageHeader, RoleSidebar, Topbar } from "@/components/ui/layout";
+import { AlertBanner, LoadingSkeleton } from "@/components/ui/feedback";
+import { roleHome } from "./profile";
 import { readServerProfile } from "./session-server";
 import { SessionControls } from "./session-controls";
 
@@ -16,18 +19,18 @@ export async function requireRole(role: Rol) {
 
 async function RoleLayout({ role, children }: { role: Rol; children: ReactNode }) {
   const profile = await requireRole(role);
-  if (!profile) return <p role="alert">No se pudo validar la sesión.</p>;
+  if (!profile) return <AlertBanner variant="error">No se pudo validar la sesión.</AlertBanner>;
   return (
-    <main className="min-w-0 wrap-break-word">
-      <SessionControls role={role} />
+    <AppShell sidebar={<RoleSidebar label="Portal" items={[{ label: role, href: roleHome[role], current: true }]} />}
+      topbar={<Topbar actions={<SessionControls role={role} />}>AutoCheck</Topbar>}>
       {children}
-    </main>
+    </AppShell>
   );
 }
 
 export function ProtectedLayout({ role, children }: { role: Rol; children: ReactNode }) {
   return (
-    <Suspense fallback={<p role="status">Validando sesión…</p>}>
+    <Suspense fallback={<LoadingSkeleton label="Validando sesión…" />}>
       <RoleLayout role={role}>{children}</RoleLayout>
     </Suspense>
   );
@@ -35,7 +38,7 @@ export function ProtectedLayout({ role, children }: { role: Rol; children: React
 
 async function RolePage({ role, title }: { role: Rol; title: string }) {
   const profile = await requireRole(role);
-  return profile ? <h1>{title}</h1> : null;
+  return profile ? <PageHeader title={title} /> : null;
 }
 
 export function ProtectedPage({ role, title }: { role: Rol; title: string }) {

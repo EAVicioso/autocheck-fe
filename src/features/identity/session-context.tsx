@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 import type { Operations } from "@/shared/api/contract.generated";
 import { sessionAction, SessionActionError } from "./bff-client";
 import type { SessionProfile } from "./profile";
@@ -92,6 +92,55 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       throw error;
     }
   }
+
+  const markActivity = useEffectEvent(() => void recordActivity().catch(() => {}));
+  const expireLocally = useEffectEvent(() => void logout().catch(() => {}));
+  const actorId = session.profile?.id;
+
+  useEffect(() => {
+    if (!actorId) return;
+    const idleMs = 60 * 60_000;
+    const channel = typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel("autocheck-session-activity");
+    let lastActivity = Date.now();
+    let lastReported = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    function checkIdle() {
+      clearTimeout(timer);
+      const remaining = idleMs - (Date.now() - lastActivity);
+      if (remaining <= 0) expireLocally();
+      else timer = setTimeout(checkIdle, remaining);
+    }
+    function onInput(event: Event) {
+      if (!event.isTrusted) return;
+      const now = Date.now();
+      if (now - lastActivity >= idleMs) {
+        checkIdle();
+        return;
+      }
+      lastActivity = now;
+      if (now - lastReported >= 15_000) {
+        lastReported = now;
+        markActivity();
+        channel?.postMessage({ actorId, at: now });
+      }
+    }
+    if (channel) channel.onmessage = ({ data }) => {
+      if (data?.actorId === actorId && typeof data.at === "number" && data.at <= Date.now()) {
+        lastActivity = Math.max(lastActivity, data.at);
+      }
+    };
+    window.addEventListener("pointerdown", onInput);
+    window.addEventListener("keydown", onInput);
+    document.addEventListener("visibilitychange", checkIdle);
+    checkIdle();
+    return () => {
+      clearTimeout(timer);
+      channel?.close();
+      window.removeEventListener("pointerdown", onInput);
+      window.removeEventListener("keydown", onInput);
+      document.removeEventListener("visibilitychange", checkIdle);
+    };
+  }, [actorId]);
 
   return <SessionContext value={{ ...session, login, logout, recordActivity, revalidate, clear }}>{children}</SessionContext>;
 }
