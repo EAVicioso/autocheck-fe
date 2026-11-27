@@ -1,6 +1,6 @@
 # Protocolo Google Stitch MCP
 
-Proyecto [AutoCheck UI Project](https://stitch.withgoogle.com/projects/11913831292782401288), recurso `projects/11913831292782401288`. Antes de cambiar cada pantalla o componente, llama a `get_project`, `list_screens` y `get_screen` según corresponda. Lee el HTML con `download_file` y revisa las capturas, activos, jerarquía, estados, puntos de quiebre y variantes aplicables. Registra el ID de pantalla, archivo y fecha de consulta. El archivo es evidencia observada, sin garantía de numeración de revisiones por pantalla.
+Proyecto [AutoCheck UI Project](https://stitch.google.com/projects/11913831292782401288?pli=1), recurso `projects/11913831292782401288`. Antes de cambiar cada pantalla o componente, llama a `get_project`, `list_screens` y `get_screen` según corresponda. Lee el HTML con `download_file` y revisa las capturas, activos, jerarquía, estados, puntos de quiebre y variantes aplicables. Registra el ID de pantalla, archivo y fecha de consulta. El archivo es evidencia observada, sin garantía de numeración de revisiones por pantalla.
 
 ## Consolidación
 
@@ -57,3 +57,15 @@ Usa `projects/11913831292782401288/screens/{id}` para recuperar un recurso. Dime
 | Untitled Prototype | `979abe6a22f64329b9c37f627760fcda` | MOBILE 390 × 884 | — | Metadatos |
 | Untitled Prototype | `35b22de5539743e5bc08b5b07fd2b7b6` | MOBILE 390 × 884 | 9194aeff38904411a76791d43e0933ef | Metadatos |
 | 05 Citizen: Dashboard (Hi-Fi) | `e431bb3b0b464651b56f9e04e7dac8de` | DESKTOP 2560 × 2238 | 7214092633840263831 | HTML revisado |
+
+
+## Sección C · 26 de noviembre de 2026
+
+| Uso | Pantalla Stitch | HTML | Aplicación |
+| --- | --- | --- | --- |
+| Login, expiración y acceso | `ab424e8a921d4732b7f50dd8a41661e2`, `50341d1c91ab43dc9df8122aff50cc32`, `498a6f468a7044ce8cc310cd91f48125` | `4143551413628215723`, `3368505496701419163`, `4657283958793835909` | Se conserva el formulario y se anuncia el bloqueo indicado por el servidor. |
+| Reportes | `dd1dba05e503435da645d879513badd2` | `7421688765282220352` | Tarjetas de totales, filtros dominicanos y tabla de alertas con énfasis preventivo. |
+| Centros y rampas | `a05fcb04e79f4aa689e646997c4983fc`, `1f01aedae23b49c7833065031ce720da`, `51034cd73cc0419a8244870dbda4fa74` | `2607118061808898665`, `3251291070081069420`, `14036324164572257784` | Lista paginada, alta con campos del contrato, detalle con capacidad, rampas y horarios. Usuarios, M y auditoría reutilizan la composición de lista y formulario del portal. |
+| Asistencia | `f91a33dcfd944be0b48765a73ce630c6` | `110405999866409562` | Encabezado de soporte, control de consulta y mensaje accesible con reintento explícito. |
+
+Se consultaron los ocho HTML vía MCP y las capturas de reportes, lista de centros y asistencia. La interfaz usa etiquetas en español, foco visible, mensajes de estado con texto y controles táctiles. Los recursos de diseño se conservaron en Stitch.

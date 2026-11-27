@@ -8,4 +8,4 @@ Co-localiza vista, esquema Zod, adaptador y pruebas de cada caso bajo `src/featu
 - PA-08/13. Consume métricas de servidor y `ultimaActualizacionUtc`. El filtro por rampa preserva el denominador de la ventana. Auditoría global exige permiso y centro nulo.
 - Disponibilidad Realtime. Su evento invalida y vuelve a consultar REST. Limpia con `unsubscribe`/removeChannel y aborta al desmontar, cambiar de centro o salir. Revalida tras reconexión y vencimiento.
 
-[Invariantes y handoff](../../BACKEND_CONTEXT_TRANSFER.md)
+[Invariantes y handoff](../BACKEND_CONTEXT_TRANSFER.md)
