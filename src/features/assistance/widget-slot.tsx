@@ -28,6 +28,7 @@ export function AssistanceSlot() {
   }
   return <aside aria-label="Asistencia" id="asistencia" className="mx-auto w-full max-w-7xl px-4 sm:px-6">
     {session.status === "active" && <Card>
+      <h2 className="mb-3 text-lg font-semibold">Asistencia de AutoCheck</h2>
       <ChatbotWidget key={session.profile.id} onUnauthorized={recoverSession} />
     </Card>}
   </aside>;
