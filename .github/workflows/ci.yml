@@ -26,6 +26,25 @@ jobs:
       - run: npm run test:unit
       - run: npm run build
 
+  e2e-section-c:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-section-c
+          path: playwright-report/
+          if-no-files-found: ignore
+
   e2e-fullstack:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
@@ -51,7 +70,7 @@ jobs:
         run: |
           docker compose -f docker-compose.e2e.yml up --build -d
           curl --fail --retry 60 --retry-all-errors --retry-delay 2 http://127.0.0.1:3401/health/ready
-          curl --fail --retry 60 --retry-all-errors --retry-delay 2 http://127.0.0.1:3400/
+          curl --insecure --fail --retry 60 --retry-all-errors --retry-delay 2 https://127.0.0.1:3400/
       - run: npx playwright test
       - name: Collect Compose diagnostics
         if: failure()
