@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 import type { Operations } from "@/shared/api/contract.generated";
+import { idleRemaining } from "@/core/session-time";
 import { sessionAction, SessionActionError } from "./bff-client";
 import { roleHome, type SessionProfile } from "./profile";
 
@@ -105,7 +106,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!actorId) return;
-    const idleMs = 60 * 60_000;
     const channel = typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel("autocheck-session-activity");
     let lastActivity = Date.now();
     let lastReported = 0;
@@ -114,7 +114,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     let timer: ReturnType<typeof setTimeout>;
     function checkIdle() {
       clearTimeout(timer);
-      const remaining = idleMs - (Date.now() - lastActivity);
+      const remaining = idleRemaining(lastActivity, Date.now());
       if (remaining <= 0) expireLocally();
       else timer = setTimeout(checkIdle, remaining);
     }
@@ -134,7 +134,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     function onInput(event: Event) {
       if (!event.isTrusted) return;
       const now = Date.now();
-      if (now - lastActivity >= idleMs) {
+      if (idleRemaining(lastActivity, now) === 0) {
         checkIdle();
         return;
       }

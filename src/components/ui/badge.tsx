@@ -6,6 +6,9 @@ const statuses = {
   CONFIRMADO: "text-brand-primary",
   Aprobado: "text-status-approved",
   Rechazado: "text-status-rejected",
+  "Anomalía preventiva": "text-status-alert",
+  Activo: "text-status-approved",
+  Inactivo: "text-muted",
 } as const;
 
 export function Badge({ status }: { status: keyof typeof statuses }) {

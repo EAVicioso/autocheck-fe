@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "./classes";
 
@@ -21,6 +22,19 @@ export function Button({ variant = "primary", size = "default", type = "button",
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
   return <input {...props} className={cn(control, className)} />;
+}
+
+export function ButtonLink({ className, ...props }: ComponentProps<typeof Link>) {
+  return <Link {...props} className={cn(
+    "inline-flex min-h-11 items-center justify-center rounded-control border border-subtle bg-surface-elevated px-4 py-2 font-semibold hover:bg-surface",
+    className,
+  )} />;
+}
+
+export function LabeledControl({ label, children }: { label: string; children: ReactNode }) {
+  return <label className="grid content-start gap-1 text-sm font-medium">
+    <span>{label}</span>{children}
+  </label>;
 }
 
 export function Select({ className, ...props }: ComponentProps<"select">) {

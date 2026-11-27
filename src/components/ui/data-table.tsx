@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Button } from "./controls";
+import { Button, ButtonLink } from "./controls";
 import { EmptyState, ErrorState, LoadingSkeleton } from "./feedback";
 import { UpdatedAt } from "./statistics";
 
@@ -10,16 +10,23 @@ type TableState<T> =
   | { status: "error"; message: string; retry: () => void }
   | { status: "ready"; rows: readonly T[]; hasNext: boolean };
 
-export function DataTable<T>({ caption, columns, state, rowKey, page, onPageChange, filters, updatedAt }: {
+type Pagination = { page: number; onPageChange(page: number): void; pageHref?: never }
+  | { page: number; onPageChange?: never; pageHref(page: number): string | undefined };
+
+export function DataTable<T>({ caption, columns, state, rowKey, page, onPageChange, pageHref, filters, updatedAt }: {
   caption: string;
   columns: readonly { id: string; heading: string; render(row: T): ReactNode }[];
   state: TableState<T>;
   rowKey(row: T): string;
-  page: number;
-  onPageChange(page: number): void;
   filters?: ReactNode;
   updatedAt?: string | null;
-}) {
+} & Pagination) {
+  function pageControl(label: string, target: number, enabled: boolean) {
+    const href = enabled ? pageHref?.(target) : undefined;
+    return href ? <ButtonLink href={href} prefetch={false}>{label}</ButtonLink>
+      : <Button variant="secondary" size="touch" disabled={!enabled || !onPageChange}
+        onClick={onPageChange && (() => onPageChange(target))}>{label}</Button>;
+  }
   return <section aria-label={caption} className="space-y-3">
     {filters}
     {updatedAt !== undefined && <UpdatedAt at={updatedAt} />}
@@ -37,9 +44,9 @@ export function DataTable<T>({ caption, columns, state, rowKey, page, onPageChan
         </table>
       </div>}
       <nav aria-label="Paginación" className="flex flex-wrap items-center gap-2">
-        <Button variant="secondary" size="touch" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>Anterior</Button>
+        {pageControl("Anterior", page - 1, page > 1)}
         <span aria-live="polite">Página {page}</span>
-        <Button variant="secondary" size="touch" disabled={!state.hasNext} onClick={() => onPageChange(page + 1)}>Siguiente</Button>
+        {pageControl("Siguiente", page + 1, state.hasNext)}
       </nav>
     </>}
   </section>;
