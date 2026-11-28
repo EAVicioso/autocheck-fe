@@ -22,7 +22,7 @@ type SectionApi = Awaited<ReturnType<typeof requireAdminAccess>>["api"];
 type SectionOperation = Exclude<keyof Operations, "POST /api/asistencia" | "POST /api/pagos/webhook">;
 
 export class SectionApiError extends Error {
-  constructor(readonly status: number, readonly code?: string) {
+  constructor(readonly status: number, readonly code?: string, readonly detail?: string) {
     super("La API rechazó la operación.");
   }
 }
@@ -30,7 +30,10 @@ export class SectionApiError extends Error {
 export async function sectionData<K extends SectionOperation>(api: SectionApi, operation: K, input: Operations[K]["input"]):
 Promise<Operations[K]["success"]["body"]> {
   const result = await api.request<K>(operation, input);
-  if (!result.ok) throw new SectionApiError(result.status, result.error?.codigo);
+  if (!result.ok) {
+    const detail = typeof result.error?.detail === "string" ? result.error.detail : undefined;
+    throw new SectionApiError(result.status, result.error?.codigo, detail);
+  }
   return result.body;
 }
 

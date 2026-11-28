@@ -1,8 +1,8 @@
 import { createHmac, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { request as proxyRequest } from "node:http";
 import { createServer } from "node:https";
 import tls from "node:tls";
+import { frontendProxy } from "./frontend-proxy.mjs";
 
 const keys = { key: readFileSync("/tls/key.pem"), cert: readFileSync("/tls/cert.pem") };
 const users = new Map(["ciudadano", "inspector", "admin"].map((role, index) => [
@@ -97,24 +97,7 @@ createServer(keys, async (request, response) => {
 }).listen(443, "0.0.0.0");
 
 // The Compose browser suite runs production cookies on HTTPS, including WebKit.
-createServer(keys, (request, response) => {
-  const upstream = proxyRequest({
-    hostname: "frontend",
-    port: 3400,
-    method: request.method,
-    path: request.url,
-    headers: { ...request.headers, "x-forwarded-proto": "https", "x-forwarded-host": request.headers.host },
-  }, (frontend) => {
-    response.writeHead(frontend.statusCode, frontend.headers);
-    frontend.pipe(response);
-  });
-  upstream.on("error", () => {
-    if (response.headersSent) response.destroy();
-    else response.writeHead(502).end();
-  });
-  response.on("close", () => upstream.destroy());
-  request.pipe(upstream);
-}).listen(3400, "0.0.0.0");
+createServer(keys, frontendProxy("frontend", 3400)).listen(3400, "0.0.0.0");
 
 tls.createServer(keys, (socket) => {
   socket.setEncoding("utf8");

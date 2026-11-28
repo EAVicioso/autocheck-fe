@@ -22,8 +22,9 @@ export function AdminForm({ action, children, label }: { action: AdminFormAction
   return <form method="post" onSubmit={onSubmit} className="space-y-3">
     <fieldset disabled={!ready || pending} className="space-y-3">
       {children}
-      <Button type="submit" size="touch">{label}</Button>
+      <Button type="submit" size="touch">{pending ? "Guardando…" : label}</Button>
     </fieldset>
-    {feedback && <AlertBanner variant={feedback.kind}>{feedback.message}</AlertBanner>}
+    {pending ? <p role="status" className="sr-only">Guardando cambios…</p>
+      : feedback && <AlertBanner variant={feedback.kind}>{feedback.message}</AlertBanner>}
   </form>;
 }

@@ -73,7 +73,11 @@ export function alerts(filters) {
       const porcentaje = 100 * aprobadas / 21;
       if (porcentaje <= 95 || !inDates(filters, fecha) || !sameFilter(filters, "centroId", centroId)
         || !sameFilter(filters, "inspectorId", inspectorId) || !window.some((row) => sameFilter(filters, "rampaId", row.rampaId))) continue;
-      items.push({ id, inspectorId, centroId, fecha, inspecciones: window.map((row) => row.id),
+      // Overlapping windows can end with the same element in the unordered wire array.
+      const shared = rows[10].id;
+      const inspectionIds = window.map((row) => row.id);
+      const inspecciones = inspectionIds.filter((id) => id !== shared).concat(inspectionIds.filter((id) => id === shared));
+      items.push({ id, inspectorId, centroId, fecha, inspecciones,
         desdeUtc: window[0].cierreUtc, hastaUtc: cierreUtc, aprobadas, total: 21, porcentaje });
     }
   }

@@ -1,4 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
+import { once } from "node:events";
+import { createServer, type Server, type ServerResponse } from "node:http";
+import { frontendProxy } from "./fixtures/frontend-proxy.mjs";
 import { dominicanDay } from "../src/shared/dates/dominican";
 
 const backend = "http://127.0.0.1:3401";
@@ -47,6 +50,7 @@ test("PA-08 a–d filtra días dominicanos y ventanas de 21 con desempate y deno
   await expect(page.getByText(/Última actualización:/).first()).toContainText("Santo Domingo");
   const table = page.getByRole("table", { name: "Alertas preventivas" });
   await expect(table.getByText("20 de 21")).toHaveCount(2);
+  await expect(table.getByText("95.24%", { exact: true })).toHaveCount(2);
 
   await page.getByRole("textbox", { name: "ID de la rampa" }).fill(id(11));
   await page.getByRole("button", { name: "Aplicar filtros" }).click();
@@ -59,9 +63,22 @@ test("PA-08 a–d filtra días dominicanos y ventanas de 21 con desempate y deno
   await expect(table).toHaveCount(0);
   await page.goto(report + "&inspectorId=" + id(23));
   await expect(table.getByText("21 de 21")).toBeVisible();
+  await expect(table.getByText("100%", { exact: true })).toBeVisible();
   await page.goto("/admin/reportes?desde=2000-01-01&hasta=2000-01-01");
   await expect(page.getByText("Sin datos", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("NaN", { exact: true })).toHaveCount(0);
+});
+
+test("PA-08 aplica el centro del administrador local al formulario y a ambos reportes", async ({ page }) => {
+  await login(page, "local-c");
+  await page.goto("/admin/reportes?desde=2026-11-25&hasta=2026-11-26&centroId=" + id(2));
+  const center = page.getByRole("textbox", { name: "ID del centro" });
+  await expect(center).toHaveValue(id(1));
+  await expect(center).toHaveAttribute("readonly", "");
+  await expect(page.getByRole("table", { name: "Detalle diario" })).toBeVisible();
+  await expect(page.getByRole("table", { name: "Alertas preventivas" })).toBeVisible();
+  await page.getByRole("button", { name: "Aplicar filtros" }).click();
+  await expect(page).toHaveURL((url) => url.searchParams.get("centroId") === id(1));
 });
 
 test("PA-09 a–d valida en ambas fronteras y ofrece reintento explícito después de timeout, red o JSON inválido", async ({ page }) => {
@@ -88,13 +105,14 @@ test("PA-09 a–d valida en ambas fronteras y ofrece reintento explícito despu�
   });
   for (const [index, consulta] of ["Timeout", "Error de conexión", "Respuesta inválida"].entries()) {
     await input.fill(consulta);
-    const response = index ? page.waitForResponse((result) => result.url().endsWith("/api/asistencia")) : null;
+    const response = page.waitForResponse((result) => result.url().endsWith("/api/asistencia"));
     await region.getByRole("button", { name: index ? "Reintentar consulta" : "Enviar consulta" }).click();
-    if (response) {
-      const result = await response;
-      expect(result.status()).toBe(503);
-      expect(await result.json()).toEqual(fallback);
-    }
+    const result = await response;
+    expect(result.status()).toBe(503);
+    expect(await result.json()).toEqual(fallback);
+    const elapsed = result.request().timing().responseEnd;
+    expect(elapsed).toBeGreaterThan(0);
+    expect(elapsed).toBeLessThan(3000);
     await expect(region.getByRole("alert")).toHaveText(fallback.respuesta);
     expect(sent).toBe(index + 1);
   }
@@ -142,33 +160,110 @@ test("PA-12 a–c cambia capacidad y rechaza interrupciones de citas y retencion
   const ramp = page.getByRole("region", { name: "Rampa con retención" });
   await ramp.getByLabel("Rampa activa").uncheck();
   await ramp.getByRole("button", { name: "Guardar rampa" }).click();
-  await expect(ramp.getByRole("alert")).toHaveText("La rampa tiene citas confirmadas o retenciones vigentes.");
-  await page.getByLabel("Cierre Lunes").fill("12:00");
+  await expect(ramp.getByRole("alert")).toHaveText("Resuelve las citas y retenciones antes de desactivar la rampa.");
+  await page.getByRole("textbox", { name: "Cierre Lunes" }).fill("12:00");
   await page.getByRole("button", { name: "Guardar horarios" }).click();
-  await expect(page.getByText("El horario propuesto afecta citas confirmadas o retenciones vigentes.")).toBeVisible();
-  await page.getByLabel("Centro activo").uncheck();
+  await expect(page.getByText("Resuelve las citas y retenciones antes de cambiar el horario.")).toBeVisible();
+  await page.getByRole("checkbox", { name: "Centro activo" }).uncheck();
   await page.getByRole("button", { name: "Guardar centro" }).click();
-  await expect(page.getByText("El centro tiene citas confirmadas o retenciones vigentes.")).toBeVisible();
-  await page.getByLabel("Nombre de la rampa").last().fill("Rampa adicional");
+  await expect(page.getByText("Resuelve las citas y retenciones antes de desactivar el centro.")).toBeVisible();
+  await page.getByRole("textbox", { name: "Nombre de la rampa" }).last().fill("Rampa adicional");
   await page.getByRole("button", { name: "Agregar rampa" }).click();
   await expect(page.getByText(/Capacidad simultánea/)).toContainText("2");
   await page.goto("/admin/centros/nuevo");
-  await page.getByLabel("Nombre del centro").fill("Nuevo centro E2E");
-  await page.getByLabel("Dirección").fill("Santiago");
+  await page.getByRole("textbox", { name: "Nombre del centro" }).fill("Nuevo centro E2E");
+  await page.getByRole("textbox", { name: "Dirección" }).fill("Santiago");
   await page.getByRole("button", { name: "Registrar centro" }).click();
   await expect(page.getByRole("heading", { name: "Nuevo centro E2E" })).toBeVisible();
+});
+
+test("PA-12 muestra el guardado y permite reintentar si no se pudo validar el acceso", async ({ page, request }) => {
+  await login(page);
+  const detail = "/admin/centros/" + id(1);
+  await page.goto(detail);
+  const save = page.getByRole("button", { name: "Guardar centro" });
+  const active = page.getByRole("checkbox", { name: "Centro activo" });
+  await active.uncheck();
+  await save.click();
+  const previousError = page.getByText("Resuelve las citas y retenciones antes de desactivar el centro.");
+  await expect(previousError).toBeVisible();
+
+  const access = (await page.context().cookies()).find((cookie) => cookie.name === "__Host-autocheck-access");
+  const setProfileUnavailable = async (profileUnavailable: boolean) => {
+    const result = await request.post(backend + "/__fixture/session", {
+      headers: { Authorization: "Bearer " + access?.value }, data: { profileUnavailable },
+    });
+    expect(result.ok()).toBe(true);
+  };
+  const gate = Promise.withResolvers<void>();
+  await page.route(origin + detail, async (route) => {
+    if (route.request().method() === "POST") await gate.promise;
+    await route.continue();
+  });
+  await setProfileUnavailable(true);
+  try {
+    await active.check();
+    await save.click();
+    await expect(page.getByRole("button", { name: "Guardando…" })).toBeDisabled();
+    await expect(previousError).toHaveCount(0);
+    gate.resolve();
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText("No se pudo validar el acceso. Vuelve a intentar.");
+  } finally {
+    gate.resolve();
+    await setProfileUnavailable(false);
+  }
+  await save.click();
+  await expect(page.getByText("Centro actualizado.")).toBeVisible();
 });
 
 test("PA-05b / RAE-02 crea una versión futura y conserva M anterior", async ({ page }) => {
   await login(page);
   await page.getByRole("link", { name: "Reglas de inspección" }).click();
   await expect(page.getByRole("cell", { name: "3", exact: true })).toBeVisible();
-  await page.getByLabel("Nuevo M").fill("4");
-  await page.getByLabel("Vigencia (Santo Domingo)").fill(dominicanDay(new Date(Date.now() + 2 * 86_400_000)) + "T12:00");
+  await page.getByRole("spinbutton", { name: "Nuevo M" }).fill("4");
+  await page.getByLabel("Vigencia (Santo Domingo)").filter({ visible: true })
+    .fill(dominicanDay(new Date(Date.now() + 2 * 86_400_000)) + "T12:00");
   await page.getByRole("button", { name: "Registrar versión" }).click();
   await expect(page.getByText("Nueva versión de M registrada.")).toBeVisible();
   await expect(page.getByRole("cell", { name: "4", exact: true })).toBeVisible();
   await expect(page.getByRole("cell", { name: "3", exact: true })).toBeVisible();
+});
+
+async function listen(server: Server) {
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("El servidor de prueba no tiene un puerto TCP.");
+  return address.port;
+}
+
+test("el proxy E2E transmite respuestas completas y cierra las truncadas", async () => {
+  let truncated: ServerResponse | undefined;
+  const upstream = createServer((request, response) => {
+    if (request.url !== "/truncated") {
+      response.end("respuesta completa");
+      return;
+    }
+    truncated = response;
+    response.writeHead(200, { "Content-Length": 100 });
+    response.write("respuesta parcial");
+  });
+  const proxy = createServer(frontendProxy("127.0.0.1", await listen(upstream)));
+  try {
+    const url = "http://127.0.0.1:" + await listen(proxy);
+    expect(await (await fetch(url)).text()).toBe("respuesta completa");
+    const signal = AbortSignal.timeout(2000);
+    const partial = await fetch(url + "/truncated", { signal });
+    expect(partial.status).toBe(200);
+    truncated?.destroy();
+    await expect(partial.text()).rejects.toThrow();
+    expect(signal.aborted).toBe(false);
+  } finally {
+    for (const server of [proxy, upstream]) {
+      server.close();
+      server.closeAllConnections();
+    }
+  }
 });
 
 test("PA-13 a–b restringe el registro a auditoría global y entrega únicamente columnas de lectura", async ({ page }) => {
@@ -196,7 +291,8 @@ test("PA-13 a–b restringe el registro a auditoría global y entrega únicament
   await expect(table.getByRole("cell", { name: "corr-fixture-01" })).toBeVisible();
   expect(await document?.text()).not.toContain("fixture-only-snapshot");
   await expect(table.getByRole("button")).toHaveCount(0);
-  await page.getByLabel("Operación", { exact: true }).fill("No existe");
-  await page.getByRole("button", { name: "Filtrar auditoría" }).click();
-  await expect(page.getByText("Sin datos", { exact: true })).toBeVisible();
+  const audit = page.getByRole("region", { name: "Registro de auditoría" });
+  await audit.getByRole("textbox", { name: "Operación", exact: true }).fill("No existe");
+  await audit.getByRole("button", { name: "Filtrar auditoría" }).click();
+  await expect(audit.getByText("Sin datos", { exact: true })).toBeVisible();
 });

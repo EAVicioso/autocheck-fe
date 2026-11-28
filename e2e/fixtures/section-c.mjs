@@ -27,7 +27,7 @@ function appendEvent(actor, operacion, entidad, anterior, nuevo) {
 
 function response(status, body) { return { status, body }; }
 const ok = (body) => response(200, body);
-const problem = (status, codigo) => ({ status, codigo });
+const problem = (status, codigo, detail) => ({ status, codigo, detail });
 
 export async function sectionC(request, url, actor, readJson) {
   const route = request.method + " " + url.pathname;
@@ -83,7 +83,9 @@ export async function sectionC(request, url, actor, readJson) {
     if (!admin("centros.gestionar") || !withinCenter(id)) return denied();
     const body = await readJson(request);
     if (route === "PATCH /api/centros/" + id) {
-      if (id === reportIds.center && !body.activo) return problem(409, "CENTRO_CON_COMPROMISOS");
+      if (id === reportIds.center && !body.activo) {
+        return problem(409, "CENTRO_CON_COMPROMISOS", "Resuelve las citas y retenciones antes de desactivar el centro.");
+      }
       Object.assign(center.centro, body);
       return ok(center.centro);
     }
@@ -95,13 +97,15 @@ export async function sectionC(request, url, actor, readJson) {
     if (route.startsWith("PATCH /api/centros/" + id + "/rampas/")) {
       const ramp = center.rampas.find((item) => url.pathname.endsWith(item.id));
       if (!ramp) return problem(404, "RECURSO_NO_ENCONTRADO");
-      if (ramp.id === reportIds.rampA && !body.activa) return problem(409, "RAMPA_CON_COMPROMISOS");
+      if (ramp.id === reportIds.rampA && !body.activa) {
+        return problem(409, "RAMPA_CON_COMPROMISOS", "Resuelve las citas y retenciones antes de desactivar la rampa.");
+      }
       Object.assign(ramp, body);
       return ok(ramp);
     }
     if (route === "PUT /api/centros/" + id + "/horarios") {
       if (id === reportIds.center && JSON.stringify(body.horarios) !== JSON.stringify(center.horarios)) {
-        return problem(409, "HORARIO_CON_COMPROMISOS");
+        return problem(409, "HORARIO_CON_COMPROMISOS", "Resuelve las citas y retenciones antes de cambiar el horario.");
       }
       center.horarios = body.horarios;
       return ok(body);

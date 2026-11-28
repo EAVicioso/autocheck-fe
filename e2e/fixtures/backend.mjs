@@ -34,9 +34,9 @@ function empty(response, status) {
   response.end();
 }
 
-function problem(response, status, codigo, retryAfter) {
+function problem(response, status, codigo, retryAfter, detail) {
   if (retryAfter) response.setHeader("Retry-After", String(retryAfter));
-  json(response, status, { status, codigo, traceId: "fixture" }, "application/problem+json");
+  json(response, status, { status, codigo, traceId: "fixture", detail }, "application/problem+json");
 }
 
 async function readJson(request) {
@@ -63,9 +63,10 @@ const server = createServer(async (request, response) => {
     }
     if (route === "POST /__fixture/session") {
       if (!actor) return empty(response, 404);
-      const { inactiveMs, expireJwt } = await readJson(request);
+      const { inactiveMs, expireJwt, profileUnavailable } = await readJson(request);
       if (typeof inactiveMs === "number") actor.inactiveMs = inactiveMs;
       if (expireJwt) session.expiredToken = true;
+      if (typeof profileUnavailable === "boolean") actor.profileUnavailable = profileUnavailable;
       return json(response, 200, { refreshes: actor.refreshes, activity: actor.activity, revoked: actor.revoked });
     }
     if (route === "POST /api/auth/registro") {
@@ -140,7 +141,8 @@ const server = createServer(async (request, response) => {
       return empty(response, 204);
     }
     if (unusable) return problem(response, 401, "SESION_EXPIRADA");
-    if (route === "GET /api/usuarios/me") return json(response, 200, actor.user);
+    if (route === "GET /api/usuarios/me") return actor.profileUnavailable
+      ? problem(response, 503, "SERVICIO_NO_DISPONIBLE") : json(response, 200, actor.user);
     if (route === "POST /api/auth/actividad") {
       actor.activity++;
       actor.inactiveMs = 0;
@@ -161,7 +163,7 @@ const server = createServer(async (request, response) => {
     }
     const section = await sectionC(request, url, actor.user, readJson);
     if (section) {
-      if (section.codigo) return problem(response, section.status, section.codigo);
+      if (section.codigo) return problem(response, section.status, section.codigo, undefined, section.detail);
       return json(response, section.status, section.body);
     }
     return problem(response, 404, "SOLICITUD_RECHAZADA");

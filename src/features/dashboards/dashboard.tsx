@@ -4,28 +4,26 @@ import { DataTable } from "@/components/ui/data-table";
 import { AlertBanner } from "@/components/ui/feedback";
 import { Card } from "@/components/ui/layout";
 import { StatCard } from "@/components/ui/statistics";
-import { hasAdminAccess, sectionAccess } from "@/core/access";
+import { sectionAccess } from "@/core/access";
 import { pageSize, searchHref, type SearchParams } from "@/core/search";
 import { sectionData, AdminSection } from "@/core/section-server";
 import type { Alerta, FilaMetrica } from "@/shared/api/contract.generated";
 import { dominicanDateTime } from "@/shared/dates/dominican";
-import { reportFilters } from "./report-filters";
-import { distinctAlertWindows, rejectionLabel } from "./report-view-model";
+import { parseReportFilters, reportFilters } from "./report-filters";
+import { distinctAlertWindows, percentageLabel, rejectionLabel } from "./report-view-model";
 
 const path = "/admin/reportes";
 
 export function Dashboard({ search }: { search: Promise<SearchParams> }) {
   return <AdminSection title="Reportes de inspección" access={sectionAccess.reports} render={async ({ api, profile }) => {
-    const parsed = reportFilters.safeParse(await search);
-    const valid = parsed.success;
-    const { pagina, paginaAlertas, ...filters } = parsed.data ?? reportFilters.parse({});
-    const centroId = filters.centroId ?? profile.centroId ?? undefined;
+    const parsed = parseReportFilters(await search, profile.centroId);
+    const { pagina, paginaAlertas, ...filters } = parsed.data ?? reportFilters.parse({ centroId: profile.centroId ?? undefined });
 
     const fields = <Card>
       <form action={path} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <LabeledControl label="Desde"><DatePicker name="desde" defaultValue={filters.desde} required /></LabeledControl>
         <LabeledControl label="Hasta"><DatePicker name="hasta" defaultValue={filters.hasta} required /></LabeledControl>
-        <LabeledControl label="ID del centro"><Input name="centroId" defaultValue={centroId} maxLength={36}
+        <LabeledControl label="ID del centro"><Input name="centroId" defaultValue={filters.centroId} maxLength={36}
           readOnly={profile.centroId !== null} /></LabeledControl>
         <LabeledControl label="ID de la rampa"><Input name="rampaId" defaultValue={filters.rampaId} maxLength={36} /></LabeledControl>
         <LabeledControl label="ID del inspector"><Input name="inspectorId" defaultValue={filters.inspectorId} maxLength={36} /></LabeledControl>
@@ -33,14 +31,10 @@ export function Dashboard({ search }: { search: Promise<SearchParams> }) {
       </form>
     </Card>;
 
-    if (!valid) return <>{fields}<AlertBanner variant="error">
+    if (!parsed.success) return <>{fields}<AlertBanner variant="error">
       Usa identificadores válidos y un rango de hasta 366 días de diferencia.
     </AlertBanner></>;
-    if (!hasAdminAccess(profile, sectionAccess.reports, centroId)) return <>{fields}
-      <AlertBanner variant="error">Selecciona un centro dentro de tu alcance.</AlertBanner>
-    </>;
-
-    const query = { ...filters, centroId, tamano: pageSize };
+    const query = { ...filters, tamano: pageSize };
     const [metrics, alerts] = await Promise.all([
       sectionData(api, "GET /api/reportes/inspecciones", { query: { ...query, pagina } }),
       sectionData(api, "GET /api/reportes/alertas", { query: { ...query, pagina: paginaAlertas } }),
@@ -81,7 +75,9 @@ export function Dashboard({ search }: { search: Promise<SearchParams> }) {
             <time dateTime={row.hastaUtc}>{dominicanDateTime(row.hastaUtc)}</time>
           </> },
           { id: "approved", heading: "Aprobadas", render: (row) => <div className="space-y-1">
-            <p>{row.aprobadas} de {row.total}</p><Badge status="Anomalía preventiva" />
+            <p>{row.aprobadas} de {row.total}</p>
+            <p>{percentageLabel(row.porcentaje)}</p>
+            <Badge status="Anomalía preventiva" />
           </div> },
         ]} rowKey={(row) => row.id} updatedAt={alerts.ultimaActualizacionUtc}
           state={{ status: "ready", rows: distinctAlertWindows(alerts.items), hasNext: paginaAlertas < 500000 && alerts.items.length === pageSize }}

@@ -69,3 +69,5 @@ Usa `projects/11913831292782401288/screens/{id}` para recuperar un recurso. Dime
 | Asistencia | `f91a33dcfd944be0b48765a73ce630c6` | `110405999866409562` | Encabezado de soporte, control de consulta y mensaje accesible con reintento explícito. |
 
 Se consultaron los ocho HTML vía MCP y las capturas de reportes, lista de centros y asistencia. La interfaz usa etiquetas en español, foco visible, mensajes de estado con texto y controles táctiles. Los recursos de diseño se conservaron en Stitch.
+
+El 28 de noviembre de 2026 se volvieron a consultar el tablero nacional (`dd1dba05e503435da645d879513badd2`, HTML `7421688765282220352`), el tablero de centro (`452cdaa8bf5c44028afc1ac45d682c1c`, HTML `14566090539212972075`), el alta de centro (`1f01aedae23b49c7833065031ce720da`, HTML `3251291070081069420`) y su detalle (`51034cd73cc0419a8244870dbda4fa74`, HTML `14036324164572257784`). Los formularios administrativos muestran el guardado en curso y el resultado del servidor. El tablero aplica el centro del perfil cuando está asignado y muestra el porcentaje de cada alerta junto al conteo.
