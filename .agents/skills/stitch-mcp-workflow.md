@@ -71,3 +71,12 @@ Usa `projects/11913831292782401288/screens/{id}` para recuperar un recurso. Dime
 Se consultaron los ocho HTML vía MCP y las capturas de reportes, lista de centros y asistencia. La interfaz usa etiquetas en español, foco visible, mensajes de estado con texto y controles táctiles. Los recursos de diseño se conservaron en Stitch.
 
 El 28 de noviembre de 2026 se volvieron a consultar el tablero nacional (`dd1dba05e503435da645d879513badd2`, HTML `7421688765282220352`), el tablero de centro (`452cdaa8bf5c44028afc1ac45d682c1c`, HTML `14566090539212972075`), el alta de centro (`1f01aedae23b49c7833065031ce720da`, HTML `3251291070081069420`) y su detalle (`51034cd73cc0419a8244870dbda4fa74`, HTML `14036324164572257784`). Los formularios administrativos muestran el guardado en curso y el resultado del servidor. El tablero aplica el centro del perfil cuando está asignado y muestra el porcentaje de cada alerta junto al conteo.
+
+## Bloque A · Portal, perfil y vehículos · 28 de noviembre de 2026
+
+| Uso | Pantalla Stitch | HTML | Adaptación |
+| --- | --- | --- | --- |
+| Portal ciudadano | e431bb3b0b464651b56f9e04e7dac8de | 7214092633840263831 | Acciones de acceso al perfil y los vehículos. |
+| Perfil | 4d595f09692d49898db0ad2a60aab4f2, 86bfda3ab90c4321bd8c615afdd00a25 | 2213695939059046795, 3709125697231449645 | Formulario con nombre y celular y correo de solo lectura. |
+| Vehículos | 6b402c2cf9e441a7ae8f7c76e9c12e86 | 1213177697283472879 | Se reutiliza la composición de datos del vehículo para el titular y los campos del contrato. |
+
