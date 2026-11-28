@@ -9,8 +9,8 @@ async function login(page: Page) {
   if (fullStack) await loginPage(page, "citizen");
   else {
     await page.goto("/login");
-    await page.getByLabel("Correo electrónico").fill("ciudadano@example.invalid");
-    await page.getByLabel("Contraseña", { exact: true }).fill("Fixture123");
+    await page.getByLabel("Correo electrónico").filter({ visible: true }).fill("ciudadano@example.invalid");
+    await page.getByLabel("Contraseña", { exact: true }).filter({ visible: true }).fill("Fixture123");
     await page.getByRole("button", { name: "Iniciar sesión" }).click();
   }
   await expect(page.getByRole("heading", { name: "Área ciudadana" })).toBeVisible();
@@ -19,19 +19,19 @@ async function login(page: Page) {
 async function createVehicle(page: Page) {
   const suffix = randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase();
   const plate = "E2E-" + suffix;
-  await page.getByLabel("Matrícula").fill(plate);
-  await page.getByLabel("VIN").fill("E2EAC" + suffix);
-  await page.getByLabel("Año").fill("2020");
-  await page.getByLabel("Marca").selectOption({ index: 1 });
-  await page.getByLabel("Modelo").selectOption({ index: 1 });
-  await page.getByLabel("Color").selectOption({ index: 1 });
+  await page.getByLabel("Matrícula").filter({ visible: true }).fill(plate);
+  await page.getByLabel("VIN").filter({ visible: true }).fill("E2EAC" + suffix);
+  await page.getByLabel("Año").filter({ visible: true }).fill("2020");
+  await page.getByLabel("Marca").filter({ visible: true }).selectOption({ index: 1 });
+  await page.getByLabel("Modelo").filter({ visible: true }).selectOption({ index: 1 });
+  await page.getByLabel("Color").filter({ visible: true }).selectOption({ index: 1 });
   await page.getByRole("button", { name: "Guardar vehículo" }).click();
   return plate;
 }
 
 async function selectSlot(page: Page, index = 0) {
-  await page.getByLabel("Centro").selectOption({ index: 1 });
-  await page.getByLabel("Fecha de la cita").fill(dominicanDay(futureSlot(3)));
+  await page.getByLabel("Centro").filter({ visible: true }).selectOption({ index: 1 });
+  await page.getByLabel("Fecha de la cita").filter({ visible: true }).fill(dominicanDay(futureSlot(3)));
   await page.getByRole("radio", { name: /· Libre$/ }).nth(index).check();
   await page.getByRole("button", { name: "Revisar reserva" }).click();
 }
@@ -47,7 +47,7 @@ test("PA-03/04/12a crea vehículo, reserva, confirma el pago y cancela la cita",
   const plate = await createVehicle(page);
   await expect(page.getByRole("link", { name: "Editar " + plate })).toBeVisible();
   await page.goto("/ciudadano/citas/nueva");
-  await page.getByLabel("Vehículo").selectOption({ label: plate });
+  await page.getByLabel("Vehículo").filter({ visible: true }).selectOption({ label: plate });
   await selectSlot(page, fullStack ? (info.project.name === "mobile-webkit" ? 12 : 10) : 0);
   await page.getByRole("button", { name: "Iniciar pago simulado" }).click();
   await expect(page.getByText("Cita confirmada", { exact: true })).toBeVisible({ timeout: 25000 });
@@ -56,7 +56,7 @@ test("PA-03/04/12a crea vehículo, reserva, confirma el pago y cancela la cita",
   const appointmentUrl = page.url();
   await expect(page.getByText(plate, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Cancelar cita", exact: true }).click();
-  await page.getByLabel("Motivo de cancelación").fill("Cambio de planes");
+  await page.getByLabel("Motivo de cancelación").filter({ visible: true }).fill("Cambio de planes");
   await page.getByRole("button", { name: "Confirmar cancelación" }).click();
   await expect(page.getByText("Cancelada", { exact: true })).toBeVisible();
 
@@ -69,14 +69,14 @@ test("PA-03/04/12a crea vehículo, reserva, confirma el pago y cancela la cita",
       const visitor = await other.newPage();
       await visitor.goto(new URL("/registro", appointmentUrl).href);
       const email = "cita-ajena-" + randomUUID() + "@example.test";
-      await visitor.getByLabel("Nombre").fill("Otro Ciudadano");
-      await visitor.getByLabel("Correo electrónico").fill(email);
-      await visitor.getByLabel("Contraseña", { exact: true }).fill("Fixture123");
+      await visitor.getByLabel("Nombre").filter({ visible: true }).fill("Otro Ciudadano");
+      await visitor.getByLabel("Correo electrónico").filter({ visible: true }).fill(email);
+      await visitor.getByLabel("Contraseña", { exact: true }).filter({ visible: true }).fill("Fixture123");
       await visitor.getByRole("button", { name: "Registrarme" }).click();
       await expect(visitor.getByText("Cuenta activa. Ya puedes iniciar sesión.")).toBeVisible();
       await visitor.goto(new URL("/login", appointmentUrl).href);
-      await visitor.getByLabel("Correo electrónico").fill(email);
-      await visitor.getByLabel("Contraseña", { exact: true }).fill("Fixture123");
+      await visitor.getByLabel("Correo electrónico").filter({ visible: true }).fill(email);
+      await visitor.getByLabel("Contraseña", { exact: true }).filter({ visible: true }).fill("Fixture123");
       await visitor.getByRole("button", { name: "Iniciar sesión" }).click();
       await expect(visitor.getByRole("heading", { name: "Área ciudadana" })).toBeVisible();
       await visitor.goto(appointmentUrl);
@@ -100,8 +100,8 @@ for (const [scenario, message] of [
     await page.getByRole("link", { name: "Agendar cita" }).click();
     await page.getByRole("link", { name: "Registrar vehículo para agendar" }).click();
     const plate = await createVehicle(page);
-    await expect(page.getByLabel("Vehículo")).toHaveValue(/.+/);
-    await expect(page.getByLabel("Vehículo").locator("option:checked")).toHaveText(plate);
+    await expect(page.getByLabel("Vehículo").filter({ visible: true })).toHaveValue(/.+/);
+    await expect(page.getByLabel("Vehículo").filter({ visible: true }).locator("option:checked")).toHaveText(plate);
     await selectSlot(page);
     await page.getByRole("button", { name: "Iniciar pago simulado" }).click();
     if (scenario === "REVERTIDO") {
@@ -164,11 +164,11 @@ test("edita el perfil y actualiza y archiva un vehículo propio", async ({ page 
   test.skip(info.project.name !== "desktop-chromium", "El CRUD se verifica una vez por entorno.");
   await login(page);
   await page.getByRole("link", { name: "Mi perfil" }).click();
-  await page.getByLabel("Celular").fill("8095550101");
+  await page.getByLabel("Celular").filter({ visible: true }).fill("8095550101");
   await page.getByRole("button", { name: "Guardar perfil" }).click();
   await expect(page.getByText("Perfil actualizado.")).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel("Celular")).toHaveValue("8095550101");
+  await expect(page.getByLabel("Celular").filter({ visible: true })).toHaveValue("8095550101");
   await page.goto("/ciudadano/vehiculos/nuevo");
   const plate = await createVehicle(page);
   await page.getByRole("link", { name: "Editar " + plate }).click();
