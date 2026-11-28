@@ -36,7 +36,7 @@ Prohíbe editar o hacer push directo a `main`. Usa `feat/{owner}-{slice}`, `fix/
 
 ## Índice de .agents/
 
-- [Desarrollo y CI](.agents/README.md)
+- [Desarrollo y CI](README.md)
 - [Contrato HTTP](.agents/API_CONTRACT.md)
 - [Invariantes y handoff del backend](.agents/BACKEND_CONTEXT_TRANSFER.md)
 - [Sistema de diseño](.agents/DESIGN.md)

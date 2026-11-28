@@ -4,14 +4,14 @@ Next.js App Router, React, TypeScript estricto y Tailwind CSS v4.
 
 ## Desarrollo local
 
-Usa la versión de Node de [.nvmrc](../.nvmrc) y el lockfile de npm.
+Usa la versión de Node de [.nvmrc](.nvmrc) y el lockfile de npm.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Copia [.env.example](../.env.example) a `.env.local` y ajusta `AUTOCHECK_API_URL` para usar identidad, asistencia y la verificación pública. La API debe poder validar los JWT e identificar la sesión registrada. Si Next está detrás de un proxy que modifica el origen, configura `AUTOCHECK_APP_ORIGIN` con el origen público exacto. Usa HTTPS en producción para las cookies Secure. Las variables públicas de Supabase solo se requieren para Broadcast y deben estar presentes al compilar el frontend.
+Copia [.env.example](.env.example) a `.env.local` y ajusta `AUTOCHECK_API_URL` para usar identidad, asistencia y la verificación pública. La API debe poder validar los JWT e identificar la sesión registrada. Si Next está detrás de un proxy que modifica el origen, configura `AUTOCHECK_APP_ORIGIN` con el origen público exacto. Usa HTTPS en producción para las cookies Secure. Las variables públicas de Supabase solo se requieren para Broadcast y deben estar presentes al compilar el frontend.
 
 ## Activación del QR web
 
@@ -31,11 +31,11 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-El modo rápido de Playwright ejecuta el build de producción con un doble HTTP. Para regenerar el contrato usa `npm run contract:generate`. Consulta [AGENTS.md](../AGENTS.md) para las reglas de trabajo y el estado de Stitch.
+El modo rápido de Playwright ejecuta el build de producción con un doble HTTP. Para regenerar el contrato usa `npm run contract:generate`. Consulta [AGENTS.md](AGENTS.md) para las reglas de trabajo y el estado de Stitch.
 
 ## E2E con la API real
 
-El workflow [Frontend CI](../.github/workflows/ci.yml) fija el SHA del backend y usa el token de Actions para leer el repositorio público. Si el backend pasa a ser privado, configura el secret `AUTOCHECK_API_READ_TOKEN` con permiso **Contents: Read** sobre `EAVicioso/autocheck-api`. Los proveedores, el certificado TLS del frontend y el firmante académico usan valores de prueba creados en el stack.
+El workflow [Frontend CI](.github/workflows/ci.yml) fija el SHA del backend y usa el token de Actions para leer el repositorio público. Si el backend pasa a ser privado, configura el secret `AUTOCHECK_API_READ_TOKEN` con permiso **Contents: Read** sobre `EAVicioso/autocheck-api`. Los proveedores, el certificado TLS del frontend y el firmante académico usan valores de prueba creados en el stack.
 
 | Criterios | Evidencia actual |
 | --- | --- |
