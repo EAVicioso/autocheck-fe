@@ -10,8 +10,8 @@ export function endpoint(path: string) { return upstream + path; }
 
 export async function loginPage(page: Page, actor: Actor) {
   await page.goto("/login");
-  await page.getByLabel("Correo electrónico").fill(actors[actor].correo);
-  await page.getByLabel("Contraseña", { exact: true }).fill(actors[actor].contrasena);
+  await page.getByLabel("Correo electrónico").filter({ visible: true }).fill(actors[actor].correo);
+  await page.getByLabel("Contraseña", { exact: true }).filter({ visible: true }).fill(actors[actor].contrasena);
   await page.getByRole("button", { name: "Iniciar sesión" }).click();
 }
 

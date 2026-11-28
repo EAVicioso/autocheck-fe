@@ -32,21 +32,21 @@ test("PA-01 registra la cuenta por la UI y obtiene el perfil ciudadano", async (
   const correo = "alta-" + randomUUID() + "@example.test";
   const contrasena = "ñññññññ١";
   await page.goto("/registro");
-  await page.getByLabel("Nombre").fill("Ciudadano E2E");
-  await page.getByLabel("Correo electrónico").fill(correo);
-  await page.getByLabel("Contraseña", { exact: true }).fill(contrasena);
+  await page.getByLabel("Nombre").filter({ visible: true }).fill("Ciudadano E2E");
+  await page.getByLabel("Correo electrónico").filter({ visible: true }).fill(correo);
+  await page.getByLabel("Contraseña", { exact: true }).filter({ visible: true }).fill(contrasena);
   await page.getByRole("button", { name: "Registrarme" }).click();
   await expect(page.getByText("Cuenta activa. Ya puedes iniciar sesión.")).toBeVisible();
   await page.goto("/login");
-  await page.getByLabel("Correo electrónico").fill(correo);
-  await page.getByLabel("Contraseña", { exact: true }).fill(contrasena);
+  await page.getByLabel("Correo electrónico").filter({ visible: true }).fill(correo);
+  await page.getByLabel("Contraseña", { exact: true }).filter({ visible: true }).fill(contrasena);
   await page.getByRole("button", { name: "Iniciar sesión" }).click();
   await expect(page.getByRole("heading", { name: "Área ciudadana" })).toBeVisible();
 });
 
 test("RS-09 conserva los campos cerrados antes de hidratar el formulario", async ({ browser, baseURL }, info) => {
   test.skip(info.project.name !== "desktop-chromium", "La forma SSR se verifica una vez.");
-  const context = await browser.newContext({ javaScriptEnabled: false });
+  const context = await browser.newContext({ javaScriptEnabled: false, ignoreHTTPSErrors: true });
   try {
     const page = await context.newPage();
     await page.goto(baseURL + "/registro");

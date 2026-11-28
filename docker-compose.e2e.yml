@@ -49,7 +49,7 @@ services:
       - -ec
       - >
         openssl req -x509 -newkey rsa:2048 -nodes -days 2
-        -subj /CN=providers -addext subjectAltName=DNS:providers,DNS:generativelanguage.googleapis.com
+        -subj /CN=providers -addext subjectAltName=DNS:providers,DNS:generativelanguage.googleapis.com,IP:127.0.0.1
         -keyout /tls/key.pem -out /tls/cert.pem &&
         openssl pkcs12 -export -inkey /tls/key.pem -in /tls/cert.pem
         -out /tls/certificate.pfx -passout pass:e2e-only &&
@@ -60,6 +60,8 @@ services:
   providers:
     image: node:26.13.0-bookworm
     command: ["node", "/fixtures/providers.mjs"]
+    ports:
+      - "127.0.0.1:3400:3400"
     volumes:
       - tls:/tls:ro
       - ./e2e/fixtures:/fixtures:ro
@@ -118,9 +120,7 @@ services:
       dockerfile: Dockerfile.e2e
     environment:
       AUTOCHECK_API_URL: http://postgres:8080
-      AUTOCHECK_APP_ORIGIN: http://127.0.0.1:3400
-    ports:
-      - "127.0.0.1:3400:3400"
+      AUTOCHECK_APP_ORIGIN: https://127.0.0.1:3400
     depends_on:
       api:
         condition: service_started

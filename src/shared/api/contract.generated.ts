@@ -1,6 +1,6 @@
 // Generado por npm run contract:generate desde API_CONTRACT.md.
 // Incluye las 57 rutas de negocio. Salud, OpenAPI y Scalar quedan en el handoff.
-// SHA-256 de la fuente normalizada: 7f8ef493da8be6cd54ad726b8171b5a7896597ded1f6a14579bbae6f5ef4e448
+// SHA-256 de la fuente normalizada: e5716444e12e77303244cd3acca9ae430b5c2d5dedb5dd3e7ac65033773f671f
 
 export type UUID = string
 export type Utc = string // ISO 8601 de instante

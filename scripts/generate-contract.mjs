@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 
-const source = readFileSync(new URL("../API_CONTRACT.md", import.meta.url), "utf8").replaceAll("\r\n", "\n");
+const source = readFileSync(new URL("../.agents/API_CONTRACT.md", import.meta.url), "utf8").replaceAll("\r\n", "\n");
 const target = new URL("../src/shared/api/contract.generated.ts", import.meta.url);
 const types = source.match(/^```typescript\n([\s\S]+?)\n```$/m)?.[1];
 if (!types) throw new Error("Falta el bloque TypeScript del contrato.");

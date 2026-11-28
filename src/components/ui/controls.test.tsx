@@ -4,8 +4,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { expect, it, vi } from "vitest";
 import { z } from "zod";
-import { Button, Checkbox, DatePicker, Input, RadioGroup, Select, Textarea } from "./controls";
+import { Button, ButtonLink, Checkbox, DatePicker, Input, LabeledControl, RadioGroup, Select, Textarea } from "./controls";
 import { FormField } from "./form-field";
+
+it("vincula el control con su etiqueta y conserva navegación por teclado", async () => {
+  const user = userEvent.setup();
+  render(<><LabeledControl label="Centro"><Input name="centro" /></LabeledControl>
+    <ButtonLink href="/admin/centros" prefetch={false}>Ver centros</ButtonLink></>);
+  await user.tab();
+  expect(screen.getByRole("textbox", { name: "Centro" })).toHaveFocus();
+  await user.tab();
+  const link = screen.getByRole("link", { name: "Ver centros" });
+  expect(link).toHaveFocus();
+  expect(link).toHaveAttribute("href", "/admin/centros");
+});
 
 it("expone controles nativos etiquetados y un botón táctil", async () => {
   const user = userEvent.setup();

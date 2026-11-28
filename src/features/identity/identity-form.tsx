@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +9,7 @@ import type { z } from "zod";
 import { Button, Input } from "@/components/ui/controls";
 import { FormField } from "@/components/ui/form-field";
 import { AlertBanner } from "@/components/ui/feedback";
+import { useHydrated } from "@/core/use-hydrated";
 import { formErrorPath } from "@/shared/forms/problem-path";
 import { sessionAction, SessionActionError } from "./bff-client";
 import { roleHome } from "./profile";
@@ -22,10 +23,6 @@ type Field<T extends FieldValues> = {
   autoComplete?: string;
 };
 
-const subscribeHydration = () => () => {};
-const isHydrated = () => true;
-const beforeHydration = () => false;
-
 function IdentityForm<T extends FieldValues>({ resolver, defaults, fields, label, submit }: {
   resolver: Resolver<T>;
   defaults: DefaultValues<T>;
@@ -38,7 +35,7 @@ function IdentityForm<T extends FieldValues>({ resolver, defaults, fields, label
   });
   const [message, setMessage] = useState("");
   const [done, setDone] = useState(false);
-  const ready = useSyncExternalStore(subscribeHydration, isHydrated, beforeHydration);
+  const ready = useHydrated();
 
   const onSubmit = handleSubmit(async (values) => {
     setMessage("");
@@ -55,6 +52,11 @@ function IdentityForm<T extends FieldValues>({ resolver, defaults, fields, label
         }
       }
       const retryAfter = error instanceof SessionActionError ? Number(error.retryAfter) : 0;
+      if (problem?.codigo === "CUENTA_BLOQUEADA") {
+        setMessage(retryAfter > 0 ? "Cuenta bloqueada. Vuelve a intentar en " + retryAfter + " s."
+          : "La cuenta está bloqueada temporalmente.");
+        return;
+      }
       const fallback = retryAfter > 0 ? "Vuelve a intentar en " + retryAfter + " s." : "La solicitud no pudo completarse.";
       setMessage(problem?.detail ?? problem?.title ?? fallback);
     }

@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import type { Rol } from "@/shared/api/contract.generated";
 import { AppShell, PageHeader, RoleSidebar, Topbar } from "@/components/ui/layout";
 import { AlertBanner, LoadingSkeleton } from "@/components/ui/feedback";
+import { adminSections, hasAdminAccess } from "@/core/access";
 import { roleHome } from "./profile";
 import { readServerProfile } from "./session-server";
 import { SessionControls } from "./session-controls";
@@ -20,8 +21,10 @@ export async function requireRole(role: Rol) {
 async function RoleLayout({ role, children }: { role: Rol; children: ReactNode }) {
   const profile = await requireRole(role);
   if (!profile) return <AlertBanner variant="error">No se pudo validar la sesión.</AlertBanner>;
+  const items = [{ label: role, href: roleHome[role], current: role !== "Administrador" },
+    ...adminSections.filter(({ access }) => hasAdminAccess(profile, access))];
   return (
-    <AppShell sidebar={<RoleSidebar label="Portal" items={[{ label: role, href: roleHome[role], current: true }]} />}
+    <AppShell sidebar={<RoleSidebar label="Portal" items={items} />}
       topbar={<Topbar actions={<SessionControls role={role} />}>AutoCheck</Topbar>}>
       {children}
     </AppShell>

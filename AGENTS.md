@@ -12,7 +12,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## System Architecture & Tech Stack Overview
 
-App Router, React y TypeScript estricto. Usa Tailwind CSS, React Hook Form + Zod, React Context, Supabase Auth/Realtime, Vitest/RTL y Playwright. Lee [contrato HTTP](API_CONTRACT.md) y [handoff de dominio](BACKEND_CONTEXT_TRANSFER.md); conserva sus diferencias con el SRS y los diseños. Las operaciones `[PENDIENTE_EN_BACKEND]` están indisponibles. Ante divergencia consulta antes de alterar el contrato.
+App Router, React y TypeScript estricto. Usa Tailwind CSS, React Hook Form + Zod, React Context, Supabase Auth/Realtime, Vitest/RTL y Playwright. Lee [contrato HTTP](.agents/API_CONTRACT.md) y [handoff de dominio](.agents/BACKEND_CONTEXT_TRANSFER.md); conserva sus diferencias con el SRS y los diseños. Las operaciones `[PENDIENTE_EN_BACKEND]` están indisponibles. Ante divergencia consulta antes de alterar el contrato.
 
 ## Ownership & Division of Responsibilities
 
@@ -34,7 +34,15 @@ Por feature o fix, agrega Vitest/RTL y actualiza Playwright para flujos crítico
 
 Prohíbe editar o hacer push directo a `main`. Usa `feat/{owner}-{slice}`, `fix/{owner}-{issue}` y `chore/{scope}`. Revisa A → B → C → A. Usa la [plantilla de PR](.github/PULL_REQUEST_TEMPLATE.md) con RF, CU y PA.
 
-## Skills Registry Index
+## Índice de .agents/
+
+- [Desarrollo y CI](README.md)
+- [Contrato HTTP](.agents/API_CONTRACT.md)
+- [Invariantes y handoff del backend](.agents/BACKEND_CONTEXT_TRANSFER.md)
+- [Sistema de diseño](.agents/DESIGN.md)
+- [Proyecto Stitch 11913831292782401288](https://stitch.google.com/projects/11913831292782401288?pli=1)
+
+### Skills
 
 1. [UI y Design System](.agents/skills/ui-design-system.md)
 2. [Flujo Stitch MCP](.agents/skills/stitch-mcp-workflow.md)

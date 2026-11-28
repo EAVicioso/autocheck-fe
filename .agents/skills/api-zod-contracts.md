@@ -1,6 +1,6 @@
 # API, contratos y Zod
 
-Lee [API_CONTRACT.md](../../API_CONTRACT.md). Genera `src/shared/api/contract.generated.ts` con `npm run contract:generate` y verifica invariancia con `npm run contract:check`. Las 57 operaciones mantienen casing, estados, headers e Int64. Una marca `[PENDIENTE_EN_BACKEND]` indica operación indisponible. Prohíbe endpoints inventados y CORS mediante acceso directo a proveedores.
+Lee [API_CONTRACT.md](../API_CONTRACT.md). Genera `src/shared/api/contract.generated.ts` con `npm run contract:generate` y verifica invariancia con `npm run contract:check`. Las 57 operaciones mantienen casing, estados, headers e Int64. Una marca `[PENDIENTE_EN_BACKEND]` indica operación indisponible. Prohíbe endpoints inventados y CORS mediante acceso directo a proveedores.
 
 Usa `src/shared/api/client.ts`, la frontera server/BFF, Bearer solo para el backend y cancelación. Diferencia auth de transporte, auth de aplicación, 403, 409, 429 y red. Mantén `Problem Details`, campos, `Retry-After` y cursores opacos. Usa `Idempotency-Key` en los endpoints documentados de retención/pago y mutaciones anexas. Conserva bytes, ruta y clave en resultado incierto. El webhook HMAC queda entre servicios. Maneja 204 sin cuerpo y PDF como bytes.
 

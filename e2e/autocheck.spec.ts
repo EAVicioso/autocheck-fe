@@ -8,15 +8,15 @@ const missingCertificateId = "00000000-0000-4000-8000-000000000003";
 
 async function login(page: Page, account: string) {
   await page.goto("/login");
-  await page.getByLabel("Correo electrónico").fill(account + "@example.invalid");
-  await page.getByLabel("Contraseña", { exact: true }).fill("Fixture123");
+  await page.getByLabel("Correo electrónico").filter({ visible: true }).fill(account + "@example.invalid");
+  await page.getByLabel("Contraseña", { exact: true }).filter({ visible: true }).fill("Fixture123");
   await page.getByRole("button", { name: "Iniciar sesión" }).click();
 }
 
 async function accessCookie(page: Page) {
   const cookies = await page.context().cookies();
-  const cookie = cookies.find(({ name }) => name === "autocheck-access");
-  expect(cookie).toMatchObject({ httpOnly: true, sameSite: "Lax" });
+  const cookie = cookies.find(({ name }) => name === "__Host-autocheck-access");
+  expect(cookie).toMatchObject({ httpOnly: true, secure: true, sameSite: "Lax" });
   return cookie!.value;
 }
 
@@ -33,19 +33,19 @@ test("landing, alta, recuperación y restablecimiento ejecutan el esqueleto", as
   await expect(page.getByRole("heading", { name: "AutoCheck" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Enviar consulta" })).toHaveCount(0);
   await page.getByRole("link", { name: "Registrarme" }).click();
-  await page.getByLabel("Nombre").fill("Fixture");
-  await page.getByLabel("Correo electrónico").fill("nuevo@example.invalid");
-  await page.getByLabel("Contraseña", { exact: true }).fill("ñññññññ١");
+  await page.getByLabel("Nombre").filter({ visible: true }).fill("Fixture");
+  await page.getByLabel("Correo electrónico").filter({ visible: true }).fill("nuevo@example.invalid");
+  await page.getByLabel("Contraseña", { exact: true }).filter({ visible: true }).fill("ñññññññ١");
   await page.getByRole("button", { name: "Registrarme" }).click();
   await expect(page.getByText("Confirma tu correo para iniciar sesión.")).toBeVisible();
 
   await page.goto("/recuperacion");
-  await page.getByLabel("Correo electrónico").fill("nuevo@example.invalid");
+  await page.getByLabel("Correo electrónico").filter({ visible: true }).fill("nuevo@example.invalid");
   await page.getByRole("button", { name: "Solicitar recuperación" }).click();
   await expect(page.getByText("Si la cuenta existe, recibirás instrucciones de recuperación.")).toBeVisible();
 
   await page.goto("/restablecimiento?token=fixture");
-  await page.getByLabel("Nueva contraseña").fill("ñññññññ١");
+  await page.getByLabel("Nueva contraseña").filter({ visible: true }).fill("ñññññññ١");
   await page.getByRole("button", { name: "Restablecer contraseña" }).click();
   await expect(page.getByText("Contraseña restablecida. Inicia sesión de nuevo.")).toBeVisible();
   await expect(page).toHaveURL("/restablecimiento");
@@ -98,7 +98,7 @@ test("deduplica dos refresh simultáneos y el polling no registra actividad", as
   await page.clock.fastForward(60_001);
   await expect(page).toHaveURL("/login");
   await expect(page.getByRole("button", { name: "Enviar consulta" })).toHaveCount(0);
-  expect((await page.context().cookies()).some(({ name }) => name === "autocheck-refresh")).toBe(false);
+  expect((await page.context().cookies()).some(({ name }) => name === "__Host-autocheck-refresh")).toBe(false);
   expect(await setSessionClock(page, access, {})).toMatchObject({ refreshes: 1, activity: 0 });
 });
 
@@ -107,7 +107,7 @@ test("un canje tardío con cookies antiguas conserva la sesión renovada", async
   await expect(page.getByRole("button", { name: "Enviar consulta" })).toBeVisible();
   const access = await accessCookie(page);
   const oldCookies = (await page.context().cookies())
-    .filter(({ name }) => name.startsWith("autocheck-"))
+    .filter(({ name }) => name.startsWith("__Host-autocheck-"))
     .map(({ name, value }) => name + "=" + value).join("; ");
   await setSessionClock(page, access, { expireJwt: true });
 
@@ -147,7 +147,7 @@ test("el BFF rechaza CSRF y logout revoca y elimina cookies", async ({ page }) =
   expect(rejected.status()).toBe(403);
   await page.getByRole("button", { name: "Cerrar sesión" }).click();
   await expect(page).toHaveURL("/login");
-  expect((await page.context().cookies()).some(({ name }) => name.startsWith("autocheck-"))).toBe(false);
+  expect((await page.context().cookies()).some(({ name }) => name.startsWith("__Host-autocheck-"))).toBe(false);
   expect(await setSessionClock(page, access, {})).toMatchObject({ revoked: true });
 });
 
@@ -214,7 +214,7 @@ test("asistencia elimina cookies si el perfil confirma que la sesión expiró", 
   await widget.locator("form").evaluate((form: HTMLFormElement) => form.requestSubmit());
   await profile;
   await expect(page).toHaveURL("/login");
-  await expect.poll(async () => (await page.context().cookies()).filter(({ name }) => name.startsWith("autocheck-")).length).toBe(0);
+  await expect.poll(async () => (await page.context().cookies()).filter(({ name }) => name.startsWith("__Host-autocheck-")).length).toBe(0);
 });
 
 test("asistencia muestra la contingencia y cabe en el ancho móvil del esqueleto", async ({ page }) => {

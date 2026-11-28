@@ -37,14 +37,14 @@ export function ChatbotWidget({ onUnauthorized, send = askAssistance }: {
             : "No se pudo verificar la sesión. Intenta de nuevo." });
           return;
         }
-        const unavailable = result.source === "local-timeout" || result.status === 503;
+        const unavailable = result.source !== "http" || result.status === 503;
         setFeedback({
           message: unavailable ? assistanceFallback.respuesta : result.reply?.respuesta ?? "No se pudo procesar la solicitud.",
           unavailable,
         });
         if (result.status === 200) reset();
       } catch {
-        if (!controller.signal.aborted) setFeedback({ message: "No se pudo procesar la solicitud.", unavailable: false });
+        if (!controller.signal.aborted) setFeedback({ message: assistanceFallback.respuesta, unavailable: true });
       } finally {
         activeRequest.current = null;
       }
