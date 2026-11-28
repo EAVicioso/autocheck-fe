@@ -13,6 +13,12 @@ npm run dev
 
 Copia [.env.example](../.env.example) a `.env.local` y ajusta `AUTOCHECK_API_URL` para usar identidad, asistencia y la verificación pública. La API debe poder validar los JWT e identificar la sesión registrada. Si Next está detrás de un proxy que modifica el origen, configura `AUTOCHECK_APP_ORIGIN` con el origen público exacto. Usa HTTPS en producción para las cookies Secure. Las variables públicas de Supabase solo se requieren para Broadcast y deben estar presentes al compilar el frontend.
 
+## Activación del QR web
+
+En el entorno de **autocheck-api**, configura `Certificates__FrontendBaseUrl` con la base pública HTTPS de `autocheck-fe`. Los PDF nuevos enlazan a `/verificar/[id]?hash=…`. Conserva `Certificates__PublicBaseUrl` con la base pública del API. Se usa para el QR de respaldo que abre el JSON si falta `Certificates__FrontendBaseUrl`. Los PDF ya emitidos conservan sus bytes y el destino original. [PR #18 del API](https://github.com/EAVicioso/autocheck-api/pull/18)
+
+En **autocheck-fe**, `AUTOCHECK_API_URL` indica la base del API que usa el servidor para la consulta anónima con el mismo ID y hash. La activación solo requiere configuración del API y no necesita migraciones.
+
 ## Verificación
 
 ```sh

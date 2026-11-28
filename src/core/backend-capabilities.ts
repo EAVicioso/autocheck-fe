@@ -1,5 +1,4 @@
 export const pendingBackendOperations = {
-  qrHaciaVistaWeb: "PENDIENTE_EN_BACKEND",
   bandejaNotificaciones: "PENDIENTE_EN_BACKEND",
   exportarReportes: "PENDIENTE_EN_BACKEND",
   pasarelaReal: "PENDIENTE_EN_BACKEND",
