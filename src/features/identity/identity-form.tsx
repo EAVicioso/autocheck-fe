@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type DefaultValues, type FieldValues, type Path, type Resolver } from "react-hook-form";
 import type { z } from "zod";
 import { Button, Input } from "@/components/ui/controls";
+import { Stepper } from "@/components/ui/stepper";
 import { FormField } from "@/components/ui/form-field";
 import { AlertBanner } from "@/components/ui/feedback";
 import { formErrorPath } from "@/shared/forms/problem-path";
@@ -26,11 +27,12 @@ const subscribeHydration = () => () => {};
 const isHydrated = () => true;
 const beforeHydration = () => false;
 
-function IdentityForm<T extends FieldValues>({ resolver, defaults, fields, label, submit }: {
+function IdentityForm<T extends FieldValues>({ resolver, defaults, fields, label, steps, submit }: {
   resolver: Resolver<T>;
   defaults: DefaultValues<T>;
   fields: Field<T>[];
   label: string;
+  steps?: readonly string[];
   submit(values: T): Promise<string | void>;
 }) {
   const { formState, register, control, handleSubmit, setError } = useForm<T>({
@@ -61,8 +63,9 @@ function IdentityForm<T extends FieldValues>({ resolver, defaults, fields, label
   });
 
   return (
-    <form method="post" noValidate onSubmit={onSubmit}>
-      <fieldset disabled={!ready} className="space-y-3">
+    <form className="space-y-4" method="post" noValidate onSubmit={onSubmit}>
+      {steps && <Stepper steps={steps} current={done ? steps.length : 0} label="Progreso del formulario" />}
+      <fieldset disabled={!ready} className="space-y-4">
       {fields.map(({ name, label, type = "text", autoComplete }) => type === "hidden"
         ? <Input key={name} type="hidden" {...register(name)} />
         : <FormField key={name} control={control} name={name} label={label}>
@@ -98,7 +101,7 @@ export function LoginForm({ renew }: { renew: boolean }) {
       <IdentityForm<z.infer<typeof loginSchema>> resolver={zodResolver(loginSchema)}
         defaults={{ correo: "", contrasena: "" }}
         fields={[email, { ...password, autoComplete: "current-password" }]}
-        label="Iniciar sesión"
+        label="Iniciar sesión" steps={["Credenciales", "Acceso"]}
         submit={async (body) => {
           const profile = await login(body);
           router.replace(roleHome[profile.rol]);
@@ -113,7 +116,7 @@ export function RegistrationForm() {
   return <IdentityForm<z.infer<typeof registrationSchema>> resolver={zodResolver(registrationSchema)}
     defaults={{ nombre: "", correo: "", contrasena: "" }}
     fields={[{ name: "nombre", label: "Nombre", autoComplete: "name" }, email, { ...password, autoComplete: "new-password" }]}
-    label="Registrarme"
+    label="Registrarme" steps={["Datos de cuenta", "Solicitud recibida"]}
     submit={async (body) => {
       const result = await sessionAction("registro", body);
       return result.estado === "PENDIENTE_CONFIRMACION"

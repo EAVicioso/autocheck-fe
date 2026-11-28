@@ -21,7 +21,7 @@ export function AlertBanner({ children, variant = "notice" }: { children: ReactN
   return <div role={variant === "error" ? "alert" : "status"}
     className={variant === "error"
       ? "rounded-control border border-status-rejected bg-surface-elevated p-3 text-status-rejected"
-      : "rounded-control border border-status-alert bg-surface-elevated p-3 text-status-alert"}>{children}</div>;
+      : "rounded-control border border-brand-accent bg-brand-tint p-4 text-primary"}>{children}</div>;
 }
 
 export function Toast({ message, variant = "notice", onDismiss }: {
