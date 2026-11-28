@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { Inspeccion, Pago, Session, Vehiculo } from "../../src/shared/api/contract.generated";
 import { actors, ids } from "./srs";
 
-const upstream = "http://127.0.0.1:3401";
+const upstream = "http://127.0.0.1:" + (process.env.AUTOCHECK_E2E_BACKEND_PORT ?? "3401");
 type Actor = keyof typeof actors;
 
 export function endpoint(path: string) { return upstream + path; }

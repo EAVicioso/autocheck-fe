@@ -4,8 +4,8 @@ import { createServer, type Server, type ServerResponse } from "node:http";
 import { frontendProxy } from "./fixtures/frontend-proxy.mjs";
 import { dominicanDay } from "../src/shared/dates/dominican";
 
-const backend = "http://127.0.0.1:3401";
-const origin = "http://127.0.0.1:3400";
+const backend = "http://127.0.0.1:" + (process.env.AUTOCHECK_E2E_BACKEND_PORT ?? "3401");
+const origin = "http://127.0.0.1:" + (process.env.AUTOCHECK_E2E_FRONTEND_PORT ?? "3400");
 const id = (value: number) => "00000000-0000-4000-8000-" + String(value).padStart(12, "0");
 const fallback = { respuesta: "El servicio de asistencia no está disponible temporalmente. Intenta de nuevo.",
   categoria: "NO_DETERMINADA", codigo: "SERVICIO_NO_DISPONIBLE" };

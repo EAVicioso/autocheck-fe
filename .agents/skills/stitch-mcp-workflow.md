@@ -80,3 +80,12 @@ El 28 de noviembre de 2026 se volvieron a consultar el tablero nacional (`dd1dba
 | Perfil | 4d595f09692d49898db0ad2a60aab4f2, 86bfda3ab90c4321bd8c615afdd00a25 | 2213695939059046795, 3709125697231449645 | Formulario con nombre y celular y correo de solo lectura. |
 | Vehículos | 6b402c2cf9e441a7ae8f7c76e9c12e86 | 1213177697283472879 | Se reutiliza la composición de datos del vehículo para el titular y los campos del contrato. |
 
+
+## Bloque A · Citas y pago simulado · 28 de noviembre de 2026
+
+| Uso | Pantalla Stitch | HTML | Adaptación |
+| --- | --- | --- | --- |
+| Selección de centro y fecha/hora | de18e30f903c44e9853b02de2e0107b3, 3f1eb7ee825143188b7bc54ba37fe0e9 | 4194160499087432692, 2095477413974664250 | Selecciones en orden y estados por bloque y rampa con hora dominicana. |
+| Revisión de reserva y pago | a8b1249ea74d4fbdb2ce36b7bacda76e, 42f39b7b153d4e439a1d2f5aea3a4703, 4e7a8f18818840eb8f4012ea8e47a39d | 10817480875595032513, 2117450344104847041, 5479125859451345590 | Resumen, retención y resultado del servidor. El entorno académico simula el pago sin solicitar datos de tarjeta. |
+| Mis citas y detalle | 3896f5b48d104d86a10853401c452ceb, 6e4d1551936d493c9eb3e4fe4fdf90b6 | 17224780653925074299, 13629175924000037703 | Listado filtrable y ficha con las acciones disponibles según el estado de la cita. |
+

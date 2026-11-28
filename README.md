@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Copia [.env.example](.env.example) a `.env.local` y ajusta `AUTOCHECK_API_URL` para usar identidad, asistencia y la verificación pública. La API debe poder validar los JWT e identificar la sesión registrada. Si Next está detrás de un proxy que modifica el origen, configura `AUTOCHECK_APP_ORIGIN` con el origen público exacto. Usa HTTPS en producción para las cookies Secure. Las variables públicas de Supabase solo se requieren para Broadcast y deben estar presentes al compilar el frontend.
+Copia [.env.example](.env.example) a `.env.local` y ajusta `AUTOCHECK_API_URL` para usar identidad, asistencia y la verificación pública. La API debe poder validar los JWT e identificar la sesión registrada. Si Next está detrás de un proxy que modifica el origen, configura `AUTOCHECK_APP_ORIGIN` con el origen público exacto. Usa HTTPS en producción para las cookies Secure. Las variables públicas de Supabase solo se requieren para Broadcast y deben estar presentes al compilar el frontend. La disponibilidad también se actualiza por REST cada 30 segundos.
 
 ## Activación del QR web
 
@@ -40,9 +40,11 @@ El workflow [Frontend CI](.github/workflows/ci.yml) fija el SHA del backend y us
 | Criterios | Evidencia actual |
 | --- | --- |
 | PA-01/02/11 | Navegador para registro, login, salida y rechazo de portales. HTTP para bloqueo y permisos de usuarios. |
-| PA-03/04/12 | HTTP para disponibilidad, pago, idempotencia y confirmación. Los recorridos de cita y pago requieren pantallas conectadas. |
+| PA-03/04/12 | Navegador para crear vehículo, elegir horario, pagar, consultar y cancelar una cita. HTTP para disponibilidad, retención e idempotencia. El doble HTTP controla la pérdida de respuesta, el conflicto de horario y los estados terminales del pago. |
 | PA-05/06/07/10 | HTTP para inspección, historial, emisión y PDF. Navegador para QR público. Los recorridos de inspección e historial requieren pantallas conectadas. |
 | PA-08/09/11/12/13 | Navegador para reportes, asistencia, usuarios, centros y auditoría. Las pruebas rápidas controlan el reloj y el transporte con datos sintéticos. La suite con .NET verifica las lecturas y el flujo de asistencia. |
+
+Los puertos locales se pueden ajustar con AUTOCHECK_E2E_FRONTEND_PORT y AUTOCHECK_E2E_BACKEND_PORT si ya hay otro entorno en ejecución.
 
 Con Docker activo, coloca el checkout del backend en `.ci/autocheck-api` o ajusta `AUTOCHECK_API_CHECKOUT`. Desde la raíz, en PowerShell:
 
@@ -58,3 +60,7 @@ docker compose -f docker-compose.e2e.yml down --volumes
 ```
 
 PostgreSQL recibe migraciones del Dockerfile del backend y un seed local. Los tests de flujo que carecen de UI usan el cliente HTTP de Playwright contra la API real. Los fixtures de SRS identifican los límites faltantes de automatizar con el reloj real del backend.
+
+## Reinspección desde el historial
+
+El historial puede enlazar a `/ciudadano/citas/nueva?inspeccionAnteriorId=<id>`. El asistente consulta el rechazo y selecciona su vehículo activo. Si el historial también envía `vehiculo=<id>`, debe coincidir con el vehículo de la inspección.
