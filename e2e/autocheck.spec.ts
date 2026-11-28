@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { limits } from "./fixtures/srs";
 
-const app = "http://127.0.0.1:3400";
-const api = "http://127.0.0.1:3401";
+const app = "http://127.0.0.1:" + (process.env.AUTOCHECK_E2E_FRONTEND_PORT ?? "3400");
+const api = "http://127.0.0.1:" + (process.env.AUTOCHECK_E2E_BACKEND_PORT ?? "3401");
 const certificateId = "00000000-0000-4000-8000-000000000002";
 const missingCertificateId = "00000000-0000-4000-8000-000000000003";
 

@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 import { setTimeout } from "node:timers/promises";
+import { resetCitizen, sectionA, setCitizenOutcome } from "./section-a.mjs";
 import { personas, sectionC } from "./section-c.mjs";
 
 const sessions = new Map();
@@ -54,6 +55,12 @@ const server = createServer(async (request, response) => {
     const actor = session?.actor;
     const unusable = actor && (actor.inactiveMs >= 60 * 60 * 1000 || actor.revoked);
 
+    if (route === "POST /__fixture/citizen") { resetCitizen((await readJson(request)).scenario); return empty(response, 204); }
+    if (route === "POST /__fixture/citizen-outcome") {
+      const { id, estado } = await readJson(request);
+      setCitizenOutcome(id, estado);
+      return empty(response, 204);
+    }
     if (route === "GET /health") return json(response, 200, { status: "Healthy" });
     if (route === "POST /__fixture/lock-clock") {
       const { advanceMs, reset } = await readJson(request);
@@ -161,8 +168,9 @@ const server = createServer(async (request, response) => {
       }
       return json(response, 200, { respuesta: "Respuesta de prueba.", categoria: "ITV", codigo: "OK" });
     }
-    const section = await sectionC(request, url, actor.user, readJson);
+    const section = await sectionA(request, url, actor.user, readJson) ?? await sectionC(request, url, actor.user, readJson);
     if (section) {
+      if (section.status === 204) return empty(response, 204);
       if (section.codigo) return problem(response, section.status, section.codigo, undefined, section.detail);
       return json(response, section.status, section.body);
     }
@@ -172,4 +180,4 @@ const server = createServer(async (request, response) => {
   }
 });
 
-server.listen(3401, "127.0.0.1");
+server.listen(Number(process.env.AUTOCHECK_E2E_BACKEND_PORT ?? 3401), "127.0.0.1");

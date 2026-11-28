@@ -13,7 +13,7 @@ x-api: &api
     Supabase__SecretKey: e2e-only
     Gemini__ApiKey: e2e-only
     MongoDb__ConnectionString: mongodb://127.0.0.1:27017
-    Certificates__PublicBaseUrl: http://127.0.0.1:3401
+    Certificates__PublicBaseUrl: http://127.0.0.1:${AUTOCHECK_E2E_BACKEND_PORT:-3401}
     Certificates__PfxPath: /e2e/tls/certificate.pfx
     Certificates__PfxPassword: e2e-only
     Smtp__Host: providers
@@ -35,7 +35,7 @@ services:
     tmpfs:
       - /var/lib/postgresql/data
     ports:
-      - "127.0.0.1:3401:8080"
+      - "127.0.0.1:${AUTOCHECK_E2E_BACKEND_PORT:-3401}:8080"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d autocheck"]
       interval: 2s
@@ -61,7 +61,7 @@ services:
     image: node:26.13.0-bookworm
     command: ["node", "/fixtures/providers.mjs"]
     ports:
-      - "127.0.0.1:3400:3400"
+      - "127.0.0.1:${AUTOCHECK_E2E_FRONTEND_PORT:-3400}:3400"
     volumes:
       - tls:/tls:ro
       - ./e2e/fixtures:/fixtures:ro
@@ -120,7 +120,7 @@ services:
       dockerfile: Dockerfile.e2e
     environment:
       AUTOCHECK_API_URL: http://postgres:8080
-      AUTOCHECK_APP_ORIGIN: https://127.0.0.1:3400
+      AUTOCHECK_APP_ORIGIN: https://127.0.0.1:${AUTOCHECK_E2E_FRONTEND_PORT:-3400}
     depends_on:
       api:
         condition: service_started
