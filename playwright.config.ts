@@ -14,7 +14,7 @@ export default defineConfig({
       ...(fullStack ? { testIgnore: "**/autocheck.spec.ts" } : { testMatch: "**/autocheck.spec.ts" }) },
     ...(fullStack ? [
       { name: "mobile-webkit", testMatch: "**/auth-rbac.spec.ts", use: { ...devices["iPhone 13"] } },
-      { name: "inspector-tablet-touch", testMatch: "**/auth-rbac.spec.ts",
+      { name: "inspector-tablet-touch", testMatch: ["**/auth-rbac.spec.ts", "**/inspection-certificate.spec.ts"],
         use: { ...devices["Desktop Chrome"], viewport: { width: 1024, height: 768 }, hasTouch: true } },
     ] : []),
   ],

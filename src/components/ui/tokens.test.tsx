@@ -15,10 +15,16 @@ function luminance(token: string) {
 }
 
 it("los pares semánticos mantienen el contraste RS-02", () => {
-  for (const surface of ["surface", "surface-elevated"]) {
-    for (const ink of ["primary", "muted", "brand-primary", "brand-accent", "status-approved", "status-rejected", "status-pending", "status-alert", "subtle"]) {
+  for (const surface of ["surface", "surface-elevated", "brand-tint"]) {
+    for (const ink of ["primary", "muted", "brand-primary", "status-approved", "status-rejected", "status-pending", "status-alert", "subtle"]) {
       const lights = [luminance(surface), luminance(ink)].sort((a, b) => a - b);
       expect((lights[1] + 0.05) / (lights[0] + 0.05), ink + " sobre " + surface).toBeGreaterThanOrEqual(ink === "subtle" ? 3 : 4.5);
     }
   }
+});
+
+it("mantiene contraste en los nodos de progreso", () => {
+  const white = luminance("on-brand");
+  expect((white + 0.05) / (luminance("brand-primary") + 0.05)).toBeGreaterThanOrEqual(4.5);
+  expect((white + 0.05) / (luminance("brand-accent") + 0.05)).toBeGreaterThanOrEqual(3);
 });

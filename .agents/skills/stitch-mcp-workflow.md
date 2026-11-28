@@ -8,6 +8,18 @@ La revisión del 25 de noviembre de 2026 consultó los 43 recursos mediante MCP 
 
 QR carece de pantalla dedicada en el inventario. Usa contrato y primitivos compartidos para su tarjeta. Chatbot Central aporta composición y controles. Los prototipos móviles y activos se inventariaron mediante metadatos. Las pruebas táctiles verifican dimensiones del catálogo y no equivalen a una revisión visual en hardware real.
 
+## Referencias de inspecciones y certificados
+
+CU-05 usa los diseños de tablero (`452cdaa8bf5c44028afc1ac45d682c1c`), formulario
+(`93d0019fe55045eaa9d20eaa729e9e95`), validación (`6bc976ded81948d4b9e6180e2ea785ff`)
+y decisión final (`1aae16fe858a442681ce25f93d97d6ba`) del inventario versionado.
+Las vistas de historial, emisión y verificación de CU-06/07/10 reutilizan
+los componentes y tokens compartidos y respetan los campos del contrato.
+El inventario del 25 de noviembre guió la jerarquía del tablero, el registro,
+la confirmación y el resultado. La paleta y el espaciado vigentes vienen de
+[DESIGN.md](../../DESIGN.md). La comparación con Stitch en vivo queda pendiente
+porque el proyecto no estuvo disponible desde este entorno.
+
 ## Inventario
 
 Usa `projects/11913831292782401288/screens/{id}` para recuperar un recurso. Dimensiones de lienzo en píxeles.

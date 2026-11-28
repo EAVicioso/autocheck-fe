@@ -8,7 +8,7 @@ export type VerificationView =
 export function QrVerificationCard({ verification }: { verification: VerificationView }) {
   return <Card className="space-y-4">
     <AcademicDisclaimerBanner />
-    {verification.state === "verified" ? <dl className="grid gap-2 wrap-break-word sm:grid-cols-2">
+    {verification.state === "verified" ? <dl className="grid gap-4 wrap-break-word sm:grid-cols-2">
       <div><dt>Certificado</dt><dd>{verification.certificadoId}</dd></div>
       <div><dt>Emisión</dt><dd><time dateTime={verification.emisionUtc}>{dominicanDateTime(verification.emisionUtc)} (Santo Domingo)</time></dd></div>
       <div><dt>Centro</dt><dd>{verification.centro}</dd></div>

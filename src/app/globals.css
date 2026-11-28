@@ -2,28 +2,30 @@
 
 @theme {
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
-  --color-surface: #f8f9ff;
+  --color-surface: #ffffff;
   --color-surface-elevated: #ffffff;
-  --color-primary: #0c1d2d;
+  --color-primary: #001e4d;
   --color-muted: #434654;
   --color-subtle: #737685;
-  --color-brand-primary: #0040a2;
-  --color-brand-primary-hover: #003580;
-  --color-brand-accent: #9d4300;
+  --color-brand-primary: #0052cc;
+  --color-brand-primary-hover: #0045ae;
+  --color-brand-accent: #cf6625;
+  --color-brand-tint: #d8e8ff;
   --color-on-brand: #ffffff;
   --color-status-approved: #14532d;
   --color-status-rejected: #a51a16;
   --color-status-pending: #6b4700;
   --color-status-alert: #783200;
-  --color-overlay: #0c1d2d;
+  --color-overlay: #001e4d;
   --radius-control: 0.5rem;
   --radius-panel: 0.75rem;
-  --shadow-panel: 0 2px 8px rgb(12 29 45 / 0.08);
+  --shadow-panel: 0 2px 8px rgb(0 30 77 / 0.08);
   --text-page-title: 2rem;
   --text-page-title--line-height: 2.5rem;
 }
 
 @layer base {
   body { @apply bg-surface font-sans text-primary; }
+  a { @apply text-brand-primary; }
   :focus-visible { @apply outline-2 outline-offset-2 outline-brand-primary; }
 }

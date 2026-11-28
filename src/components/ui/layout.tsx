@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { LayoutDashboard } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "./classes";
 
 export function AcademicDisclaimerBanner() {
-  return <p className="rounded-control border border-subtle bg-surface-elevated px-4 py-3 text-sm text-muted">
+  return <p className="rounded-control border border-subtle bg-brand-tint px-4 py-3 text-sm text-primary">
     AutoCheck es un prototipo académico sin validez legal ni oficial ante INTRANT.
   </p>;
 }
@@ -11,11 +12,11 @@ export function AcademicDisclaimerBanner() {
 export function AppShell({ sidebar, topbar, children, academicNotice = true }: {
   sidebar?: ReactNode; topbar?: ReactNode; children: ReactNode; academicNotice?: boolean;
 }) {
-  return <div className="mx-auto max-w-7xl space-y-4 p-4 sm:p-6">
+  return <div className="mx-auto max-w-7xl space-y-4 p-6">
     <a href="#contenido" className="sr-only focus:not-sr-only">Ir al contenido principal</a>
     {topbar}
     {academicNotice && <AcademicDisclaimerBanner />}
-    <div className="flex flex-col gap-6 lg:flex-row">
+    <div className="flex flex-col gap-4 lg:flex-row">
       {sidebar}
       <main id="contenido" tabIndex={-1} className="min-w-0 flex-1 space-y-4 wrap-break-word">{children}</main>
     </div>
@@ -24,15 +25,21 @@ export function AppShell({ sidebar, topbar, children, academicNotice = true }: {
 
 type NavigationItem = { href: string; label: string; current?: boolean };
 
-export function RoleSidebar({ label, items }: { label: string; items: readonly NavigationItem[] }) {
-  return <nav aria-label={label} className="shrink-0 rounded-panel border border-subtle bg-surface-elevated p-2 lg:w-60">
-    <ul className="space-y-1">{items.map(({ href, label, current }) => <li key={href}>
+export function PortalNavigation({ label, items, horizontal = false }: {
+  label: string; items: readonly NavigationItem[]; horizontal?: boolean;
+}) {
+  return <nav aria-label={label} className={horizontal ? undefined : "shrink-0 rounded-panel border border-subtle bg-surface-elevated p-2 lg:w-60"}>
+    <ul className={horizontal ? "flex flex-wrap gap-4" : "space-y-1"}>{items.map(({ href, label, current }) => <li key={href}>
       <Link href={href} aria-current={current ? "page" : undefined} className={cn(
-        "flex min-h-11 items-center rounded-control px-3 hover:bg-surface",
-        current && "bg-surface font-semibold text-brand-primary",
-      )}>{label}</Link>
+        "flex min-h-11 items-center gap-2 rounded-control border-s-4 border-transparent px-4 py-2.5 text-primary transition-colors hover:bg-brand-tint/70",
+        current && "border-brand-primary bg-brand-tint font-semibold text-brand-primary",
+      )}>{!horizontal && <LayoutDashboard aria-hidden="true" className="size-4 shrink-0" />}{label}</Link>
     </li>)}</ul>
   </nav>;
+}
+
+export function RoleSidebar({ label, items }: { label: string; items: readonly NavigationItem[] }) {
+  return <PortalNavigation label={label} items={items} />;
 }
 
 export function Topbar({ children, actions }: { children: ReactNode; actions?: ReactNode }) {
@@ -49,7 +56,7 @@ export function PageHeader({ title, description, actions }: { title: string; des
 }
 
 export function Card({ className, ...props }: ComponentProps<"div">) {
-  return <div {...props} className={cn("rounded-panel border border-subtle bg-surface-elevated p-4 shadow-panel sm:p-6", className)} />;
+  return <div {...props} className={cn("rounded-panel border border-subtle bg-surface-elevated p-6 shadow-panel", className)} />;
 }
 
 export function Breadcrumb({ items }: { items: readonly NavigationItem[] }) {

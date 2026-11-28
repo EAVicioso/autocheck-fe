@@ -1,6 +1,6 @@
 import { expect, type APIRequestContext, type APIResponse, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
-import type { Inspeccion, Pago, Session, Vehiculo } from "../../src/shared/api/contract.generated";
+import type { Pago, Session, Vehiculo } from "../../src/shared/api/contract.generated";
 import { actors, ids } from "./srs";
 
 const upstream = "http://127.0.0.1:3401";
@@ -55,10 +55,9 @@ export async function awaitPayment(request: APIRequestContext, headers: Record<s
   return checked<Pago>(await request.get(path, { headers }), 200);
 }
 
-export async function prepareInspection(request: APIRequestContext, offset: number) {
+export async function prepareAssignedAppointment(request: APIRequestContext, offset: number) {
   const citizen = await authorize(request, "citizen");
   const admin = await authorize(request, "admin");
-  const inspector = await authorize(request, "inspector");
   const vehicle = await createVehicle(request, citizen);
   const attempt = await startPayment(request, idem(citizen), vehicle, futureSlot(offset));
   const payment = await awaitPayment(request, citizen, attempt.intentoId);
@@ -67,8 +66,5 @@ export async function prepareInspection(request: APIRequestContext, offset: numb
     headers: admin, data: { inspectorId: ids.inspector },
   });
   expect(assignment.status()).toBe(200);
-  const inspection = await checked<Inspeccion>(await request.post(endpoint("/api/inspecciones"), {
-    headers: idem(inspector), data: { citaId: payment.citaId },
-  }), 201);
-  return { inspection, vehicle, payment, citizen, inspector };
+  return { vehicle, payment, citizen };
 }
